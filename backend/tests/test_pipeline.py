@@ -1,0 +1,69 @@
+import pytest
+
+from app.models import CriteriaProfile, Score, SearchFilter
+from app.pipeline import run_pipeline_for_filter
+from app.scorer.schemas import ScoreResult
+
+
+def _make_search_filter(db):
+    sf = SearchFilter(name="test", search_url="https://www.facebook.com/marketplace/x/search/?query=sedan")
+    db.add(sf)
+    db.commit()
+    db.refresh(sf)
+    return sf
+
+
+def _make_active_profile(db):
+    profile = CriteriaProfile(name="default", prompt_text="Score cars.", is_active=True)
+    db.add(profile)
+    db.commit()
+    db.refresh(profile)
+    return profile
+
+
+def test_run_pipeline_raises_without_active_profile(db, raw_listings, mocker):
+    mocker.patch("app.pipeline.run_scrape", return_value=[])
+    sf = _make_search_filter(db)
+
+    with pytest.raises(ValueError, match="active criteria profile"):
+        run_pipeline_for_filter(db, sf)
+
+
+def test_run_pipeline_scores_and_notifies_new_listings(db, raw_listings, monkeypatch, mocker):
+    monkeypatch.setattr("app.scraper.ingest.download_images", lambda fb_id, urls: [])
+    fake_result = ScoreResult(match_score=85, summary="Good.", pros=[], cons=[], dealbreaker_flags=[])
+    mocker.patch("app.scorer.service.get_scorer", return_value=lambda l, c: fake_result)
+    mock_notifier = mocker.Mock()
+    mocker.patch("app.notifier.service.get_notifier", return_value=mock_notifier)
+
+    sf = _make_search_filter(db)
+    _make_active_profile(db)
+
+    # ingest_listings (called by run_scrape) hits real Apify — patch fetch_listings only.
+    mocker.patch("app.scraper.service.fetch_listings", return_value=raw_listings)
+
+    result = run_pipeline_for_filter(db, sf, results_limit=10)
+
+    assert result.listings_processed == 3
+    assert result.scores_created == 3
+    assert result.notifications_sent == 3 * 2  # discord + telegram, all above threshold
+    assert db.query(Score).count() == 3
+
+
+def test_run_pipeline_skips_listings_already_scored_under_active_profile(db, raw_listings, monkeypatch, mocker):
+    monkeypatch.setattr("app.scraper.ingest.download_images", lambda fb_id, urls: [])
+    fake_result = ScoreResult(match_score=85, summary="Good.", pros=[], cons=[], dealbreaker_flags=[])
+    mocker.patch("app.scorer.service.get_scorer", return_value=lambda l, c: fake_result)
+    mocker.patch("app.notifier.service.get_notifier", return_value=mocker.Mock())
+    mocker.patch("app.scraper.service.fetch_listings", return_value=raw_listings)
+
+    sf = _make_search_filter(db)
+    _make_active_profile(db)
+
+    first_result = run_pipeline_for_filter(db, sf, results_limit=10)
+    second_result = run_pipeline_for_filter(db, sf, results_limit=10)
+
+    assert first_result.scores_created == 3
+    assert second_result.scores_created == 0  # already scored under this profile
+    assert second_result.listings_processed == 3  # still scraped/upserted
+    assert db.query(Score).count() == 3

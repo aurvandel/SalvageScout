@@ -1,9 +1,13 @@
+import logging
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.models import NotificationLog, Score
 from app.notifier.registry import available_channels, get_notifier
+
+logger = logging.getLogger(__name__)
 
 
 def _already_notified(db: Session, listing_id: int, channel: str) -> bool:
@@ -40,6 +44,7 @@ def notify_if_above_threshold(
             status = "sent"
         except Exception:
             status = "failed"
+            logger.exception("Notification failed: listing_id=%s channel=%s", listing.id, channel)
 
         log = NotificationLog(listing_id=listing.id, score_id=score.id, channel=channel, status=status)
         db.add(log)

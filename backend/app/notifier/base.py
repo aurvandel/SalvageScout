@@ -26,3 +26,14 @@ def compose_message(listing: Listing, score: Score) -> str:
 
     lines += ["", listing.url]
     return "\n".join(lines)
+
+
+def truncate_for_limit(text: str, url: str, max_length: int) -> str:
+    """Trim `text` to fit a channel's message-length limit, always keeping `url`
+    intact at the end — a truncated body is fine, a broken link isn't."""
+    if len(text) <= max_length:
+        return text
+    suffix = f"\n\n{url}"
+    ellipsis = "…"
+    body_budget = max_length - len(suffix) - len(ellipsis)
+    return text[:body_budget].rstrip() + ellipsis + suffix

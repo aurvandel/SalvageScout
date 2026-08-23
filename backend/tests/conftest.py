@@ -8,9 +8,11 @@ os.environ.setdefault(
     "DATABASE_URL", "postgresql+psycopg://salvagescout:salvagescout@localhost:5432/salvagescout_test"
 )
 
-from app.db import Base, engine  # noqa: E402
+from app.db import Base, engine, get_db  # noqa: E402
 from app.db import SessionLocal  # noqa: E402
 from app import models  # noqa: E402,F401 — registers all model classes on Base.metadata
+from app.main import app  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
@@ -37,6 +39,15 @@ def db():
     session.close()
     transaction.rollback()
     connection.close()
+
+
+@pytest.fixture
+def client(db):
+    """A TestClient whose requests run against the same rolled-back-per-test `db`
+    session, so API tests see the same isolation as direct-DB tests."""
+    app.dependency_overrides[get_db] = lambda: db
+    yield TestClient(app)
+    app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.fixture

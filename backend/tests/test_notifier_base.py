@@ -1,5 +1,5 @@
 from app.models import Listing, Score
-from app.notifier.base import compose_message
+from app.notifier.base import compose_message, truncate_for_limit
 
 
 def _listing(**overrides):
@@ -58,3 +58,25 @@ def test_compose_message_handles_missing_price_and_vehicle_fields():
     text = compose_message(_listing(price_amount=None, year=None, make=None, model=None), _score())
     assert "price unknown" in text
     assert "2014 Chevrolet Impala" in text  # falls back to title
+
+
+def test_truncate_for_limit_no_op_under_limit():
+    text = "short message"
+    assert truncate_for_limit(text, "https://example.com/1", 2000) == text
+
+
+def test_truncate_for_limit_preserves_url_when_over_limit():
+    url = "https://www.facebook.com/marketplace/item/123456789/"
+    text = ("x" * 3000) + f"\n\n{url}"
+
+    result = truncate_for_limit(text, url, 2000)
+
+    assert len(result) <= 2000
+    assert result.endswith(url)
+    assert "…" in result
+
+
+def test_truncate_for_limit_exact_boundary_is_not_truncated():
+    url = "https://example.com/1"
+    text = "x" * 2000
+    assert truncate_for_limit(text, url, 2000) == text
