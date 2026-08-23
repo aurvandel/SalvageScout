@@ -1,0 +1,130 @@
+[
+  {
+    "listingId": "111958708816213",
+    "title": "2007 Nissan Altima \u00b7 3.5 SE Sedan 4D",
+    "price": 1500,
+    "strikethroughPrice": 3000,
+    "currency": "USD",
+    "location": "Corbin, KY",
+    "images": [
+      "https://scontent-atl3-2.xx.fbcdn.net/v/t39.30808-6/725393916_1028459559765847_3547241002573162002_n.jpg?stp=c256.0.1537.1537a_dst-jpg_tt6&cstp=mx1537x1537&ctp=s261x260&_nc_cat=101&ccb=1-7&_nc_sid=454cf4&_nc_ohc=Zyqaty24Xn0Q7kNvwH-enu9&_nc_oc=Adp1KY7HqGmuWgZYouXQ0r2HEfR39IgwUEqLcTGRgHWP12I_J3pC8cTgc7RSYjDeDT3Viw3HhYM9jm4IboelIJfO&_nc_zt=23&_nc_ht=scontent-atl3-2.xx&_nc_gid=qN_oRh-LDYDMlrqqp3unHw&_nc_ss=72289&oh=00_AQGWh0_3xHa6snlsz99YkszyXBp_TWUNP-DKZdZy9irZpQ&oe=6A90493C"
+    ],
+    "url": "https://www.facebook.com/marketplace/item/111958708816213/",
+    "listingType": "vehicle",
+    "isAvailable": true,
+    "isPending": false,
+    "isSold": false,
+    "deliveryOptions": [],
+    "vehicleMake": "Nissan",
+    "vehicleModel": "Altima",
+    "vehicleYear": 2007,
+    "vehicleMileage": 178000,
+    "bedrooms": null,
+    "bathrooms": null,
+    "scrapedAt": "2026-08-23T05:44:02.994Z"
+  },
+  {
+    "listingId": "104308459609897",
+    "title": "2018 Ford Focus \u00b7 SE Sedan 4D",
+    "price": 6000,
+    "strikethroughPrice": 6800,
+    "currency": "USD",
+    "location": "Barbourville, KY",
+    "images": [
+      "https://scontent-atl3-3.xx.fbcdn.net/v/t39.84726-6/773677622_2113696669209351_1638357867852991265_n.jpg?stp=c0.0.260.260a_dst-jpg_p261x260_tt6&_nc_cat=109&ccb=1-7&_nc_sid=92e707&_nc_ohc=lAjFnquyFLoQ7kNvwG62g9T&_nc_oc=AdoUYo-9TLPp3dphgOWGgZnlRc4theLPDB6Ch0uAGPovBF9dvglS-81QN-gh1H7l2dyQUTY--Pw4jhhZ687flgVt&_nc_zt=14&_nc_ht=scontent-atl3-3.xx&_nc_gid=qN_oRh-LDYDMlrqqp3unHw&_nc_ss=72289&oh=00_AQE_iUwQ-lG3gseErefHPU5YfyOvBxQeQ58okjFQ9z8RLg&oe=6A906A40"
+    ],
+    "url": "https://www.facebook.com/marketplace/item/104308459609897/",
+    "listingType": "vehicle",
+    "isAvailable": true,
+    "isPending": false,
+    "isSold": false,
+    "deliveryOptions": [
+      "in_person"
+    ],
+    "vehicleMake": "Ford",
+    "vehicleModel": "Focus",
+    "vehicleYear": 2018,
+    "vehicleMileage": 178000,
+    "bedrooms": null,
+    "bathrooms": null,
+    "scrapedAt": "2026-08-23T05:44:02.999Z"
+  },
+  {
+    "listingId": "28223456057294358",
+    "title": "2008 Nissan Altima \u00b7 2.5 S Sedan 4D",
+    "price": 2500,
+    "strikethroughPrice": 3000,
+    "currency": "USD",
+    "location": "Barbourville, KY",
+    "images": [
+      "https://scontent-atl3-2.xx.fbcdn.net/v/t39.30808-6/768529196_122206732838339627_6233233229729676472_n.jpg?stp=c0.296.1152.1152a_dst-jpg_tt6&cstp=mx1152x1152&ctp=s261x260&_nc_cat=105&ccb=1-7&_nc_sid=454cf4&_nc_ohc=jgQ23G5U09UQ7kNvwH3oUN9&_nc_oc=Adrd83ZxH6t4lPbuWd3NOHtz6a2Y28tjC1qdJVsJ9K19dBB3cZySflKCijtdpAtbAG87rrLTHqMxOqRu0RjFJAy-&_nc_zt=23&_nc_ht=scontent-atl3-2.xx&_nc_gid=qN_oRh-LDYDMlrqqp3unHw&_nc_ss=72289&oh=00_AQE76pqLUjrUDzr-eZctNlT3YmdzdcDBVtadLgt7Bm4Vmg&oe=6A905B61"
+    ],
+    "url": "https://www.facebook.com/marketplace/item/28223456057294358/",
+    "listingType": "vehicle",
+    "isAvailable": true,
+    "isPending": false,
+    "isSold": false,
+    "deliveryOptions": [
+      "in_person"
+    ],
+    "vehicleMake": "Nissan",
+    "vehicleModel": "Altima",
+    "vehicleYear": 2008,
+    "vehicleMileage": 312000,
+    "bedrooms": null,
+    "bathrooms": null,
+    "scrapedAt": "2026-08-23T05:44:03.002Z"
+  },
+  {
+    "listingId": "108039605890393",
+    "title": "2011 Ford Fusion \u00b7 SEL Sedan 4D",
+    "price": 4000,
+    "strikethroughPrice": 4500,
+    "currency": "USD",
+    "location": "Barbourville, KY",
+    "images": [
+      "https://scontent-atl3-2.xx.fbcdn.net/v/t39.30808-6/760587668_27539944785647681_1945376750809499396_n.jpg?stp=c0.169.1536.1536a_dst-jpg_tt6&cstp=mx1536x1536&ctp=s261x260&_nc_cat=105&ccb=1-7&_nc_sid=946e27&_nc_ohc=1YfTebTiX8MQ7kNvwFFu26W&_nc_oc=AdocdrQu0Kw_uuu-EG6TDhVuf9sUZoYqDVB6FnRG69ee4PLRIFa8PVcyGNSrG-NEQin5cOaVmJb25qwl0bTvpS5z&_nc_zt=23&_nc_ht=scontent-atl3-2.xx&_nc_gid=qN_oRh-LDYDMlrqqp3unHw&_nc_ss=72289&oh=00_AQHC6hDqIq_TdpzQZ_7G-wNjjJ4upFWEcGRSWCeEhid3VA&oe=6A904B6E"
+    ],
+    "url": "https://www.facebook.com/marketplace/item/108039605890393/",
+    "listingType": "vehicle",
+    "isAvailable": true,
+    "isPending": false,
+    "isSold": false,
+    "deliveryOptions": [
+      "in_person"
+    ],
+    "vehicleMake": "Ford",
+    "vehicleModel": "Fusion",
+    "vehicleYear": 2011,
+    "vehicleMileage": 210000,
+    "bedrooms": null,
+    "bathrooms": null,
+    "scrapedAt": "2026-08-23T05:44:03.003Z"
+  },
+  {
+    "listingId": "108557722507530",
+    "title": "2012 Audi A6 \u00b7 3.0T Premium Sedan 4D",
+    "price": 4500,
+    "strikethroughPrice": 4800,
+    "currency": "USD",
+    "location": "Cannon, KY",
+    "images": [
+      "https://scontent-atl3-3.xx.fbcdn.net/v/t39.30808-6/754825041_2538721146589244_6690166594227379971_n.jpg?stp=c0.169.1536.1536a_dst-jpg_tt6&cstp=mx1536x1536&ctp=s261x260&_nc_cat=110&ccb=1-7&_nc_sid=454cf4&_nc_ohc=7dA3AEeS4nUQ7kNvwHBaN-S&_nc_oc=AdqezlJNDZGnbwUPGbAQEXwOIXGmjnh9vMzIN7cXYA-5W_GS1ZIdw_1QcUyOjncNgbgfo1JNNh_SqPOQReEWIc6k&_nc_zt=23&_nc_ht=scontent-atl3-3.xx&_nc_gid=qN_oRh-LDYDMlrqqp3unHw&_nc_ss=72289&oh=00_AQHKgGEVEBZtFi4OHDQIMYaQyBEVru9EAXlpvR1R3Bwwig&oe=6A90486B"
+    ],
+    "url": "https://www.facebook.com/marketplace/item/108557722507530/",
+    "listingType": "vehicle",
+    "isAvailable": true,
+    "isPending": false,
+    "isSold": false,
+    "deliveryOptions": [
+      "in_person"
+    ],
+    "vehicleMake": "Audi",
+    "vehicleModel": "A6",
+    "vehicleYear": 2012,
+    "vehicleMileage": 160000,
+    "bedrooms": null,
+    "bathrooms": null,
+    "scrapedAt": "2026-08-23T05:44:03.003Z"
+  }
+]

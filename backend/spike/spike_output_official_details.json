@@ -1,0 +1,505 @@
+[
+  {
+    "facebookUrl": "https://www.facebook.com/marketplace/newyork/search/?query=sedan",
+    "id": "839387795495137",
+    "itemUrl": "https://www.facebook.com/marketplace/item/839387795495137/",
+    "listingAttributes": [],
+    "condition": "USED",
+    "timestamp": "2026-06-02T15:07:19.000Z",
+    "deliveryTypes": [
+      "IN_PERSON"
+    ],
+    "listingPhotos": [
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of car, hood ornament and text",
+        "image": {
+          "height": 720,
+          "width": 960,
+          "uri": "https://scontent-iad6-1.xx.fbcdn.net/v/t39.30808-6/735735830_122233792580319385_1006725116605159858_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1537&ctp=s960x960&_nc_cat=109&ccb=1-7&_nc_sid=454cf4&_nc_ohc=Uzp7OlrFhUYQ7kNvwG_nOb0&_nc_oc=AdoJSWhCUmVqVKhzuSzxMYvy_YcKtwG2poeWqYIPG34y9ZLn6TKEHIc2AIU6MfUHFnbxlsM0MNloZuWoizPtJhOm&_nc_zt=23&_nc_ht=scontent-iad6-1.xx&_nc_gid=FPlhLlF1_ciXHiEIoN063w&_nc_ss=7c289&oh=00_AQF53w8FikHwqtqZABO8ejnMbsyTLIxi5zXy16DKeNnhjw&oe=6A905835"
+        },
+        "id": "122230910084319385"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of text",
+        "image": {
+          "height": 720,
+          "width": 960,
+          "uri": "https://scontent-iad6-1.xx.fbcdn.net/v/t39.30808-6/712447035_122230907804319385_766187801436981839_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1537&ctp=s960x960&_nc_cat=100&ccb=1-7&_nc_sid=946e27&_nc_ohc=L9hgqUSi0B8Q7kNvwEEEGYu&_nc_oc=AdqtPo8f2VcxftM8W9AXW2iVlXG8VU0Bh4OooZE0FFZ3n2t2LFCITqth6YR26uF1mqjJcTeMuReprulS1JyC22eQ&_nc_zt=23&_nc_ht=scontent-iad6-1.xx&_nc_gid=FPlhLlF1_ciXHiEIoN063w&_nc_ss=7c289&oh=00_AQGQW9bt1yXwMF9XClYy1otpt0YCtGUP3fJcAAwZtIYp0w&oe=6A906318"
+        },
+        "id": "122230907762319385"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of \u200ecar and \u200etext that says '\u200eWawa 1 \u0639\u0643 E |aiva\u200e'\u200e\u200e",
+        "image": {
+          "height": 720,
+          "width": 960,
+          "uri": "https://scontent-iad3-2.xx.fbcdn.net/v/t39.30808-6/712763708_122230907852319385_1407535732914393910_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1537&ctp=s960x960&_nc_cat=111&ccb=1-7&_nc_sid=946e27&_nc_ohc=F_X4nmPsdv4Q7kNvwHSmk6l&_nc_oc=Adpmr3NQsiC8siN2oGXRYpTGthDvZf0Ulkcut_aKV9xbNRm-QiDlyBBY8LjRbmCwZJnBG9eclvbsY43KwFOrR13-&_nc_zt=23&_nc_ht=scontent-iad3-2.xx&_nc_gid=FPlhLlF1_ciXHiEIoN063w&_nc_ss=7c289&oh=00_AQHvbk3AL9gdU11WSEOnH12FGICsEJS_L0n6RqawlWV_jA&oe=6A905F5D"
+        },
+        "id": "122230907792319385"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of car and text",
+        "image": {
+          "height": 720,
+          "width": 960,
+          "uri": "https://scontent-iad6-1.xx.fbcdn.net/v/t39.30808-6/710625705_122230908080319385_1125961269722679593_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1537&ctp=s960x960&_nc_cat=102&ccb=1-7&_nc_sid=946e27&_nc_ohc=CYmnjCe7bpgQ7kNvwERLC7v&_nc_oc=AdpApe1K3E22A2ZG0JbPre2KFMkKgiErR4s8eF3UYRAfNTxGDmgqplxKXFXhDbaLrExFh4SkXmZi8vZ1moQHTnJB&_nc_zt=23&_nc_ht=scontent-iad6-1.xx&_nc_gid=FPlhLlF1_ciXHiEIoN063w&_nc_ss=7c289&oh=00_AQHTYUYVROWgFpXKRRORzeMzRAypkINd-6ozu2NvcKWvaw&oe=6A905B63"
+        },
+        "id": "122230908050319385"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of text that says 'wa TA Wawa + 30 D ONE HAAAI TAAAT SH'",
+        "image": {
+          "height": 720,
+          "width": 960,
+          "uri": "https://scontent-iad3-1.xx.fbcdn.net/v/t39.30808-6/714805576_122230907798319385_8677363563966236729_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1537&ctp=s960x960&_nc_cat=110&ccb=1-7&_nc_sid=946e27&_nc_ohc=SHp4m4_0P1QQ7kNvwGFt_HW&_nc_oc=AdqW76MpkP0gZXo95f5VMF5Xx7QkEetuuysazF4OOwZgDPPbp589LersZo6LTZIXeoCkXhmrzISO-BOOP5Y9peKW&_nc_zt=23&_nc_ht=scontent-iad3-1.xx&_nc_gid=FPlhLlF1_ciXHiEIoN063w&_nc_ss=7c289&oh=00_AQEVYc0m5OpN4qnPh6fEPx5zLKHz28rX4iZxlbj7QNPoHw&oe=6A905DCA"
+        },
+        "id": "122230907744319385"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of text",
+        "image": {
+          "height": 720,
+          "width": 960,
+          "uri": "https://scontent-iad3-2.xx.fbcdn.net/v/t39.30808-6/714063589_122230907870319385_3455798152599508672_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1537&ctp=s960x960&_nc_cat=111&ccb=1-7&_nc_sid=946e27&_nc_ohc=s_CNzeHrSVEQ7kNvwHPOjaf&_nc_oc=AdoquOxKFoUwG1dLLkVHcxMyWeBMnli_bLZsR5QAulgu1SWDGLBmyXLqG-7R7MQekkdzNlGm6CMGU6yKN_PzXQfq&_nc_zt=23&_nc_ht=scontent-iad3-2.xx&_nc_gid=FPlhLlF1_ciXHiEIoN063w&_nc_ss=7c289&oh=00_AQHRwYTwOAyE5IfukJoHEzn-FnxM8-If551fP5ajecw_ig&oe=6A9062E9"
+        },
+        "id": "122230907834319385"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of text",
+        "image": {
+          "height": 720,
+          "width": 960,
+          "uri": "https://scontent-iad3-2.xx.fbcdn.net/v/t39.30808-6/713243527_122230907888319385_6567420849508576658_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1537&ctp=s960x960&_nc_cat=105&ccb=1-7&_nc_sid=946e27&_nc_ohc=AXmfW5JLWxAQ7kNvwF_HKfd&_nc_oc=AdotolNC3q20PJl4pS-775gZlGh4X7nQ_vuXEcpaYAiXWyDWbPhXTd47ZOvw10W6IKA9b1bLmEuuIRshyJQvzp4w&_nc_zt=23&_nc_ht=scontent-iad3-2.xx&_nc_gid=FPlhLlF1_ciXHiEIoN063w&_nc_ss=7c289&oh=00_AQG2SevW-CevPbl9k8E5gcsbfy4H9RC3VoZ7gwA4Dnz0YA&oe=6A905412"
+        },
+        "id": "122230907864319385"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of text",
+        "image": {
+          "height": 720,
+          "width": 960,
+          "uri": "https://scontent-iad3-1.xx.fbcdn.net/v/t39.30808-6/712644382_122230907846319385_2358600638645504490_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1537&ctp=s960x960&_nc_cat=104&ccb=1-7&_nc_sid=946e27&_nc_ohc=LygKaM64G6YQ7kNvwHQLFft&_nc_oc=AdrtN1tpRGshOo3woRCH8XBdSkDN6gyBjkko7jlOUb_wpiruD1VDBVqpKDJo4WHQ7N-lQ3cA4Tr4Gv-Jeb7XRK-v&_nc_zt=23&_nc_ht=scontent-iad3-1.xx&_nc_gid=FPlhLlF1_ciXHiEIoN063w&_nc_ss=7c289&oh=00_AQEf3w_De06SN5R69TeEqYdzn9NxSQhrnwGe9tOUAW5D5g&oe=6A904FFE"
+        },
+        "id": "122230907822319385"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of hood ornament and text",
+        "image": {
+          "height": 720,
+          "width": 960,
+          "uri": "https://scontent-iad6-1.xx.fbcdn.net/v/t39.30808-6/712247474_122230907930319385_6884798245471156023_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1537&ctp=s960x960&_nc_cat=106&ccb=1-7&_nc_sid=946e27&_nc_ohc=C57BkpWjpwUQ7kNvwGJNBru&_nc_oc=AdohCnrfz6ZsCR12qDdTENeJOqQTpAhEPTbFF4x4qj0EyRZj9oN77x8ASEv0TKL_yCCO5dbBIfAjb24rPiNT1xjJ&_nc_zt=23&_nc_ht=scontent-iad6-1.xx&_nc_gid=FPlhLlF1_ciXHiEIoN063w&_nc_ss=7c289&oh=00_AQFZVGH7wD1tnMsIHyDo_i4pO5r4KdPuCpKcmhXMQMzwGg&oe=6A9068A5"
+        },
+        "id": "122230907900319385"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of text",
+        "image": {
+          "height": 960,
+          "width": 720,
+          "uri": "https://scontent-iad6-1.xx.fbcdn.net/v/t39.30808-6/710813076_122230907726319385_2622106640106532122_n.jpg?stp=dst-jpg_tt6&cstp=mx1537x2048&ctp=s960x960&_nc_cat=100&ccb=1-7&_nc_sid=946e27&_nc_ohc=9zt5E38tvHQQ7kNvwGCzJ43&_nc_oc=AdoMp566Yhh5sdeuUbAbig77nmduZiqmqGxfNi2wDKtluCQfN6skt8vwx2ai0DNsP3zbHTMf2croaqv8nicURHEs&_nc_zt=23&_nc_ht=scontent-iad6-1.xx&_nc_gid=FPlhLlF1_ciXHiEIoN063w&_nc_ss=7c289&oh=00_AQFPSTEiYF4sedbodqBNjnhr6kNzjEO7BkojXyzc0Cq7Nw&oe=6A90780E"
+        },
+        "id": "122230907720319385"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of car",
+        "image": {
+          "height": 720,
+          "width": 960,
+          "uri": "https://scontent-iad6-1.xx.fbcdn.net/v/t39.30808-6/713344774_122230908104319385_6718613981707561611_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1537&ctp=s960x960&_nc_cat=102&ccb=1-7&_nc_sid=946e27&_nc_ohc=Wa4TKS10Ij8Q7kNvwHl12BP&_nc_oc=AdpcOV5X_2402i4WgAdoDjEblLnAdQ7CV-MgApcKNnTu-tziVQUWxgtFC2bAGVbm4YVf1gL5k4yuu5QMeikbaSIS&_nc_zt=23&_nc_ht=scontent-iad6-1.xx&_nc_gid=FPlhLlF1_ciXHiEIoN063w&_nc_ss=7c289&oh=00_AQENldkma1g6MdypPhU2y-gphgel6yt855U5LpYKpGCM1A&oe=6A906E1F"
+        },
+        "id": "122230908092319385"
+      }
+    ],
+    "listingPrice": {
+      "amount_with_offset": "200000",
+      "currency": "USD",
+      "amount": "2000.00"
+    },
+    "location": {
+      "latitude": 35.724792480469,
+      "longitude": -77.931518554688,
+      "reverse_geocode_detailed": {
+        "country_alpha_two": "US",
+        "postal_code_trimmed": "27893-3516"
+      }
+    },
+    "locationText": {
+      "text": "Wilson, NC"
+    },
+    "listingTitle": " 2003 Ford Crown Victoria \u00b7 LX Sedan 4D",
+    "description": {
+      "text": "No engine light clean inside and out brand new rear end tune up done new intake manifold fresh oil change 2000 obo"
+    },
+    "isHidden": false,
+    "isLive": true,
+    "isPending": false,
+    "isSold": false,
+    "isViewerSeller": false,
+    "listingVideo": [],
+    "listingCategoryId": "807311116002614",
+    "customTitle": "2003 Ford crown victoria LX Sedan 4D",
+    "strikethroughPrice": null,
+    "primaryListingPhoto": {
+      "__typename": "Photo",
+      "id": "122230910084319385",
+      "photo_image_url": "https://scontent.fosu2-1.fna.fbcdn.net/v/t39.30808-6/735735830_122233792580319385_1006725116605159858_n.jpg?stp=c256.0.1537.1537a_dst-jpg_tt6&cstp=mx1537x1537&ctp=s261x260&_nc_cat=109&ccb=1-7&_nc_sid=454cf4&_nc_ohc=Uzp7OlrFhUYQ7kNvwFNhxih&_nc_oc=Adowh_wlpogYF2N-8sB_GRMm5exJPeYFdyKSeiwRQ1mSR7Dqeo0CFoiagPKB8AiS4WfSdcFGU2R0-Om9gsQjaWsa&_nc_zt=23&_nc_ht=scontent.fosu2-1.fna&_nc_gid=3s0dOzslPYeLRFcNPG9XYA&_nc_ss=72289&oh=00_AQGVW5Q7MPcekyluwNtTueMfZiYC8BcqFwYxdMUKTXX1dg&oe=6A905835"
+    },
+    "customSubTitlesWithRenderingFlags": [
+      {
+        "subtitle": "215K miles"
+      }
+    ]
+  },
+  {
+    "facebookUrl": "https://www.facebook.com/marketplace/newyork/search/?query=sedan",
+    "id": "1055546550355048",
+    "itemUrl": "https://www.facebook.com/marketplace/item/1055546550355048/",
+    "listingAttributes": [],
+    "condition": "USED",
+    "timestamp": "2026-08-15T17:35:55.000Z",
+    "deliveryTypes": [
+      "IN_PERSON"
+    ],
+    "listingPhotos": [
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of car",
+        "image": {
+          "height": 960,
+          "width": 951,
+          "uri": "https://scontent-iad6-1.xx.fbcdn.net/v/t39.30808-6/773541643_2176146402953235_4671855381292005900_n.jpg?stp=dst-jpg_tt6&cstp=mx2028x2048&ctp=s960x960&_nc_cat=102&ccb=1-7&_nc_sid=454cf4&_nc_ohc=G6DjXMzdH4sQ7kNvwFBRPpw&_nc_oc=AdoZgSclwfJKA8zZ0JBFImr7jyhPRRTKr4beHsa9wjYpnJ6KkHy4J2w8RAjfZuqIfGSYtCjiGi_2-7TYlnQgWQaB&_nc_zt=23&_nc_ht=scontent-iad6-1.xx&_nc_gid=4JekArPRB7umd3rKnS1TBg&_nc_ss=7c289&oh=00_AQEU_UPl61cUUjGimeBKaAfWFoArxhZ8tvA8r2wmrcYSuA&oe=6A905C01"
+        },
+        "id": "2176146372953238"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of car",
+        "image": {
+          "height": 960,
+          "width": 720,
+          "uri": "https://scontent-iad6-1.xx.fbcdn.net/v/t39.30808-6/776061740_2176142789620263_2840962769333272056_n.jpg?stp=dst-jpg_tt6&cstp=mx1537x2048&ctp=s960x960&_nc_cat=107&ccb=1-7&_nc_sid=946e27&_nc_ohc=1wKiVkXkJlEQ7kNvwGv_B37&_nc_oc=AdpcTv-zhdsahOifNXhYZvZD8Z251jJ5fKbqyYr3Yxj3ElxCsNLojWHmre6v2DlNTLEvsDAz1kLIdUigYABF_cpU&_nc_zt=23&_nc_ht=scontent-iad6-1.xx&_nc_gid=4JekArPRB7umd3rKnS1TBg&_nc_ss=7c289&oh=00_AQGxjvSKXxekdpkMElgylPyeysTNSHlEylYypWe6JnP0Lw&oe=6A904D78"
+        },
+        "id": "2176142776286931"
+      }
+    ],
+    "listingPrice": {
+      "amount_with_offset": "200000",
+      "currency": "USD",
+      "amount": "2000.00"
+    },
+    "location": {
+      "latitude": 35.752258300781,
+      "longitude": -78.656616210938,
+      "reverse_geocode_detailed": {
+        "country_alpha_two": "US",
+        "postal_code_trimmed": "27603-7724"
+      }
+    },
+    "locationText": {
+      "text": "Raleigh, NC"
+    },
+    "listingTitle": "2011 Mitsubishi Lancer \u00b7 ES Sedan 4D",
+    "description": {
+      "text": "PRICE IS NEGOTIABLE \n\nNeeds : Mass Air Flow Sensor, Rearview Mirror,  Driver Side Quarter Window, Windshield \n\nGood project car or mechanic car\nRuns and Drives\n\nGot a new car don\u2019t have the time to work on it"
+    },
+    "isHidden": false,
+    "isLive": true,
+    "isPending": false,
+    "isSold": false,
+    "isViewerSeller": false,
+    "listingVideo": [],
+    "listingCategoryId": "807311116002614",
+    "customTitle": "2011 Mitsubishi lancer ES Sedan 4D",
+    "strikethroughPrice": {
+      "formatted_amount": "$3,000",
+      "amount": "3000.00"
+    },
+    "primaryListingPhoto": {
+      "__typename": "Photo",
+      "id": "2176146372953238",
+      "photo_image_url": "https://scontent.fosu2-1.fna.fbcdn.net/v/t39.30808-6/773541643_2176146402953235_4671855381292005900_n.jpg?stp=dst-jpg_tt6&cstp=mx2028x2048&ctp=s261x260&_nc_cat=102&ccb=1-7&_nc_sid=454cf4&_nc_ohc=G6DjXMzdH4sQ7kNvwGh3aJw&_nc_oc=AdoHF8UCDg9JqtQbabCTQH_K2eRLEbGzhTndAOQwqr1s_NWK_iPbBBw-tR73UK6iUfDwhAhyq1mhx8TdcrdwBO8h&_nc_zt=23&_nc_ht=scontent.fosu2-1.fna&_nc_gid=3s0dOzslPYeLRFcNPG9XYA&_nc_ss=72289&oh=00_AQHhmKnpkbMrrklw2QU8PE0iOIvg8PhJ-hvU7MA0NPr1cg&oe=6A905C01"
+    },
+    "customSubTitlesWithRenderingFlags": [
+      {
+        "subtitle": "270K miles"
+      }
+    ]
+  },
+  {
+    "facebookUrl": "https://www.facebook.com/marketplace/newyork/search/?query=sedan",
+    "id": "1992997094673368",
+    "itemUrl": "https://www.facebook.com/marketplace/item/1992997094673368/",
+    "listingAttributes": [],
+    "condition": "USED",
+    "timestamp": "2026-05-24T03:35:23.000Z",
+    "deliveryTypes": [
+      "IN_PERSON"
+    ],
+    "listingPhotos": [
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "No photo description available.",
+        "image": {
+          "height": 960,
+          "width": 720,
+          "uri": "https://scontent-iad3-1.xx.fbcdn.net/v/t39.30808-6/727519292_1310818451261804_6569256928360407186_n.jpg?stp=dst-jpg_tt6&cstp=mx1536x2048&ctp=s960x960&_nc_cat=101&ccb=1-7&_nc_sid=454cf4&_nc_ohc=uSyxiRYLKKAQ7kNvwGecd6Z&_nc_oc=AdoybysT0X4gmwc_rRvgdjFSfdOYqCSlIv6wVmdC2Kha6Rr4TGx66vQQi_qJBL9Kqhz9NlXL8i0K7ZDfmr2sQGHQ&_nc_zt=23&_nc_ht=scontent-iad3-1.xx&_nc_gid=9VUcBwZZl-kuKCtHZEthPA&_nc_ss=72289&oh=00_AQG-2-2VTDEgkKc2MmzcZUxsJZuXqIPXkx1oxz7FXTcgbw&oe=6A906D8F"
+        },
+        "id": "1286157010394615"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "No photo description available.",
+        "image": {
+          "height": 720,
+          "width": 960,
+          "uri": "https://scontent-iad3-1.xx.fbcdn.net/v/t39.30808-6/705521852_1286152310395085_4373552641403236290_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1536&ctp=s960x960&_nc_cat=110&ccb=1-7&_nc_sid=946e27&_nc_ohc=ybqQL7nTW2UQ7kNvwGpV6tO&_nc_oc=AdrT6uuVDL2iEkPkOXD1jf7SojMKIZRESh5pnvaY_jAwpzwaVjYhF3W-uMe2EEDuwgAUIri5SG8hG-SXxyWQLbMB&_nc_zt=23&_nc_ht=scontent-iad3-1.xx&_nc_gid=9VUcBwZZl-kuKCtHZEthPA&_nc_ss=72289&oh=00_AQFuJ3LyH7L8dGh_GV6FIycrHfiA7KjtO_C_O2Hdgpykag&oe=6A906464"
+        },
+        "id": "1286152307061752"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "No photo description available.",
+        "image": {
+          "height": 720,
+          "width": 960,
+          "uri": "https://scontent-iad6-1.xx.fbcdn.net/v/t39.30808-6/705662484_1286152207061762_5381495087905092680_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1536&ctp=s960x960&_nc_cat=106&ccb=1-7&_nc_sid=946e27&_nc_ohc=igx1OBRblnQQ7kNvwFl0cNM&_nc_oc=Adq1rt9iTm7WdsidUAwGLOCFCJsoxCpgpBtK94xNsmT52L14U5cMbbbr9zC48n6NFqHwlkEKyV74mvugsWrxKchQ&_nc_zt=23&_nc_ht=scontent-iad6-1.xx&_nc_gid=9VUcBwZZl-kuKCtHZEthPA&_nc_ss=72289&oh=00_AQH01u50QqZJ_ghodtXGw_M4xwFki3-QpRWNQGs2-8lLiw&oe=6A907BBC"
+        },
+        "id": "1286152177061765"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "No photo description available.",
+        "image": {
+          "height": 720,
+          "width": 960,
+          "uri": "https://scontent-iad3-2.xx.fbcdn.net/v/t39.30808-6/705607380_1286152220395094_2750045308232134952_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1536&ctp=s960x960&_nc_cat=105&ccb=1-7&_nc_sid=946e27&_nc_ohc=e6bwI37GSgcQ7kNvwEoFjDx&_nc_oc=AdopIFZrS9MHRSVY5y_cIv_UZJgNJDOp1MIOjhXfXxSVzJq2mUUAdKiqAKGf351DSyHYsfJV1265wsgM3vy0IQZh&_nc_zt=23&_nc_ht=scontent-iad3-2.xx&_nc_gid=9VUcBwZZl-kuKCtHZEthPA&_nc_ss=72289&oh=00_AQFuBQRHkpncw42YhHNhnfleSGYEvF3IJAhjyW2HmDMzDg&oe=6A90531A"
+        },
+        "id": "1286152200395096"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "No photo description available.",
+        "image": {
+          "height": 720,
+          "width": 960,
+          "uri": "https://scontent-iad6-1.xx.fbcdn.net/v/t39.30808-6/706171507_1286152227061760_1813969065262004729_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1536&ctp=s960x960&_nc_cat=102&ccb=1-7&_nc_sid=946e27&_nc_ohc=iM79DbhTpWYQ7kNvwHEbCOL&_nc_oc=Adp_ol-gbFByQx68GJA-19NtAOyzl4yX9aYNrUUKDHkyDOZkjkjIC35Cdt8zDe70CUDe3_5_lkCHgqoeQOf4URlc&_nc_zt=23&_nc_ht=scontent-iad6-1.xx&_nc_gid=9VUcBwZZl-kuKCtHZEthPA&_nc_ss=72289&oh=00_AQHzwE3fzGl28skzXsNVp7B1r8HGGfCmJuZvUsuEsPN6OA&oe=6A905329"
+        },
+        "id": "1286152217061761"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "No photo description available.",
+        "image": {
+          "height": 960,
+          "width": 720,
+          "uri": "https://scontent-iad6-1.xx.fbcdn.net/v/t39.30808-6/704192085_1286152210395095_7038631988620260542_n.jpg?stp=dst-jpg_tt6&cstp=mx1536x2048&ctp=s960x960&_nc_cat=100&ccb=1-7&_nc_sid=946e27&_nc_ohc=0dWZttZno4MQ7kNvwF-sH8R&_nc_oc=AdpxnNF6fo26MpNOAOiX6dww4x27dFU9jus7tPXaEWRtb_iEUwZ1tmKImv-RzvulTG8Fps4P7q5anJV9UQsf0f46&_nc_zt=23&_nc_ht=scontent-iad6-1.xx&_nc_gid=9VUcBwZZl-kuKCtHZEthPA&_nc_ss=72289&oh=00_AQFacSfqb9stRnyubjwpfzU5JruwIZF9Le5AYBuClIbkXA&oe=6A904899"
+        },
+        "id": "1286152183728431"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "No photo description available.",
+        "image": {
+          "height": 960,
+          "width": 720,
+          "uri": "https://scontent-iad6-1.xx.fbcdn.net/v/t39.30808-6/705320704_1286152180395098_996362171692050753_n.jpg?stp=dst-jpg_tt6&cstp=mx1537x2048&ctp=s960x960&_nc_cat=100&ccb=1-7&_nc_sid=946e27&_nc_ohc=ak3TuZAIs10Q7kNvwFH0vRB&_nc_oc=AdqGTM82u49faVTWBVc1eTWRSV-TPFkj50uOP6EzZuTyegU8Tv-hhCHg7MiMj7RP9ffIGwuTcP3BOXnUgxF1mWg2&_nc_zt=23&_nc_ht=scontent-iad6-1.xx&_nc_gid=9VUcBwZZl-kuKCtHZEthPA&_nc_ss=72289&oh=00_AQHoYoZ753K5aymRKpxXDXSJQwnRzEEqVKpboJv-j3QWEA&oe=6A905CD6"
+        },
+        "id": "1286152163728433"
+      }
+    ],
+    "listingPrice": {
+      "amount_with_offset": "150000",
+      "currency": "USD",
+      "amount": "1500.00"
+    },
+    "location": {
+      "latitude": 36.026916503906,
+      "longitude": -78.480834960938,
+      "reverse_geocode_detailed": {
+        "country_alpha_two": "US",
+        "postal_code_trimmed": "27596"
+      }
+    },
+    "locationText": {
+      "text": "Youngsville, NC"
+    },
+    "listingTitle": "2014 Infiniti Q50 \u00b7 S 3.7 Sedan 4D",
+    "description": {
+      "text": "**Mechanic Special** Needs body work due to a fender bender. Engine also has a misfire issue, and the left rear end tie rod got bent in the fender bender so it\u2019ll need to be towed. Please if you don\u2019t have a way to tow it this isn\u2019t for you. I don\u2019t have a way to tow it so if you\u2019re interested you\u2019ll have to tow it. Besides the listed issues it\u2019s a nice car. It\u2019s been lowered and the exhaust has been done on it. Also has Maserati rims on it. Windows got 15% tint.  PRICE IS $1500 firm. I\u2019ve already lost money on this project, $1500 is the least I\u2019m taking. NO TRADES PLS, ONLY CASH. Does have a salvage title."
+    },
+    "isHidden": false,
+    "isLive": true,
+    "isPending": false,
+    "isSold": false,
+    "isViewerSeller": false,
+    "listingVideo": [],
+    "listingCategoryId": "807311116002614",
+    "customTitle": "2014 Infiniti q50 S 3.7 Sedan 4D",
+    "strikethroughPrice": null,
+    "primaryListingPhoto": {
+      "__typename": "Photo",
+      "id": "1286157010394615",
+      "photo_image_url": "https://scontent.fosu2-2.fna.fbcdn.net/v/t39.30808-6/727519292_1310818451261804_6569256928360407186_n.jpg?stp=c0.169.1536.1536a_dst-jpg_tt6&cstp=mx1536x1536&ctp=s261x260&_nc_cat=101&ccb=1-7&_nc_sid=454cf4&_nc_ohc=uSyxiRYLKKAQ7kNvwHyiGFw&_nc_oc=AdocVVd54kBOD3zTuL_K77PccuM73ZX-KBOJ3-D1vh-LiSVw6EjlP69pHIKMWNehOgbbFMLNPGbhfN-NnjL_UVxc&_nc_zt=23&_nc_ht=scontent.fosu2-2.fna&_nc_gid=3s0dOzslPYeLRFcNPG9XYA&_nc_ss=72289&oh=00_AQF0w89OtpJodFlvvAUw65_m50JfdkzDa-r2Zvbye7qayQ&oe=6A906D8F"
+    },
+    "customSubTitlesWithRenderingFlags": [
+      {
+        "subtitle": "174K miles"
+      }
+    ]
+  },
+  {
+    "facebookUrl": "https://www.facebook.com/marketplace/newyork/search/?query=sedan",
+    "id": "4304065673169283",
+    "itemUrl": "https://www.facebook.com/marketplace/item/4304065673169283/",
+    "listingAttributes": [],
+    "condition": "USED",
+    "timestamp": "2026-05-31T13:45:26.000Z",
+    "deliveryTypes": [
+      "IN_PERSON"
+    ],
+    "listingPhotos": [
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of car and road",
+        "image": {
+          "height": 960,
+          "width": 720,
+          "uri": "https://scontent-ord5-2.xx.fbcdn.net/v/t39.30808-6/734088722_27572833345739825_4246124415480998823_n.jpg?stp=dst-jpg_tt6&cstp=mx1537x2048&ctp=s960x960&_nc_cat=103&ccb=1-7&_nc_sid=454cf4&_nc_ohc=iVZkYGFov88Q7kNvwHLZnjP&_nc_oc=AdqMlUoLlZulhiB5r3qSLVe7ZuJDU-45cQt2YmfNRHDnDK3krpS6GwlMxram5NfHsb8&_nc_zt=23&_nc_ht=scontent-ord5-2.xx&_nc_gid=FUtaSn5LcNZwtFUfpFOyoQ&_nc_ss=7c289&oh=00_AQGkPCQyRF6oNio679eUzlMOoywbI5mzOHqbY5irEK8Iag&oe=6A907334"
+        },
+        "id": "27191100383913125"
+      }
+    ],
+    "listingPrice": {
+      "amount_with_offset": "100000",
+      "currency": "USD",
+      "amount": "1000.00"
+    },
+    "location": {
+      "latitude": 35.774230957031,
+      "longitude": -78.634643554688,
+      "reverse_geocode_detailed": {
+        "country_alpha_two": "US",
+        "postal_code_trimmed": "27601-1835"
+      }
+    },
+    "locationText": {
+      "text": "Raleigh, NC"
+    },
+    "listingTitle": "2004 Honda Accord \u00b7 LX Sedan 4D",
+    "description": {
+      "text": "OBO! \n\nFormer college student vehicle with a clean interior, tinted windows, and Bluetooth capability. Reliable car with plenty of potential. \n\nThis vehicle was previously deemed a total loss and later repurchased. Current known issue is that the timing belt needs to be replaced. Vehicle will need to be towed. Message for additional details or questions."
+    },
+    "isHidden": false,
+    "isLive": true,
+    "isPending": false,
+    "isSold": false,
+    "isViewerSeller": false,
+    "listingVideo": [],
+    "listingCategoryId": "807311116002614",
+    "customTitle": "2004 Honda accord LX Sedan 4D",
+    "strikethroughPrice": null,
+    "primaryListingPhoto": {
+      "__typename": "Photo",
+      "id": "27191100383913125",
+      "photo_image_url": "https://scontent.fosu2-2.fna.fbcdn.net/v/t39.30808-6/734088722_27572833345739825_4246124415480998823_n.jpg?stp=c0.169.1537.1537a_dst-jpg_tt6&cstp=mx1537x1537&ctp=s261x260&_nc_cat=103&ccb=1-7&_nc_sid=454cf4&_nc_ohc=iVZkYGFov88Q7kNvwGENlPZ&_nc_oc=AdowQAyhlDj0A9LIAG-Ww1RkUkG3N3oc01b5laVyeFWkQR6nktUDoTcIqwqH9Q6j08f3qdHKvZFOllaYnmJ3A4Pu&_nc_zt=23&_nc_ht=scontent.fosu2-2.fna&_nc_gid=3s0dOzslPYeLRFcNPG9XYA&_nc_ss=72289&oh=00_AQGDVDcie4QYfqermG5WUuv_LVJIWSgjz2lWGs6LRpIGZQ&oe=6A907334"
+    },
+    "customSubTitlesWithRenderingFlags": [
+      {
+        "subtitle": "250K miles"
+      }
+    ]
+  },
+  {
+    "facebookUrl": "https://www.facebook.com/marketplace/newyork/search/?query=sedan",
+    "id": "870828679432174",
+    "itemUrl": "https://www.facebook.com/marketplace/item/870828679432174/",
+    "listingAttributes": [],
+    "condition": "USED",
+    "timestamp": "2026-07-03T12:33:37.000Z",
+    "deliveryTypes": [
+      "IN_PERSON"
+    ],
+    "listingPhotos": [
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of car and text",
+        "image": {
+          "height": 720,
+          "width": 960,
+          "uri": "https://scontent-iad3-1.xx.fbcdn.net/v/t39.30808-6/761149173_1605664577812836_6965288223972038099_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1537&ctp=s960x960&_nc_cat=110&ccb=1-7&_nc_sid=454cf4&_nc_ohc=37mq4Ja8YusQ7kNvwGBczbi&_nc_oc=AdqYRe403B99Uzmgw9y2MJtDLdQugDz4aS1GWESisAOU5J0M-8rnHyIFtiV3g7TJsL0FI1Uzv4wCDVY0l6JJTBHe&_nc_zt=23&_nc_ht=scontent-iad3-1.xx&_nc_gid=tumsBkDFs51bmJjHeOFHWA&_nc_ss=7c289&oh=00_AQEgNXks8Bsii9jQQ9leaz5AMEfgcgUIP36wVBS4nnIDng&oe=6A907B70"
+        },
+        "id": "1581270890252205"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of car, road and text",
+        "image": {
+          "height": 960,
+          "width": 720,
+          "uri": "https://scontent-iad6-1.xx.fbcdn.net/v/t39.30808-6/737370369_1581268796919081_8072917699043782992_n.jpg?stp=dst-jpg_tt6&cstp=mx1537x2048&ctp=s960x960&_nc_cat=109&ccb=1-7&_nc_sid=946e27&_nc_ohc=91TLsNXNPaEQ7kNvwHfjlqT&_nc_oc=AdpLMGdJmQigJ7hEGaqhmxhAIyrafdtvTaLxQcotTtAiECSPfMMVOmrhNKm_b59Unzipb1ZmP1_floNHMfxf6j7p&_nc_zt=23&_nc_ht=scontent-iad6-1.xx&_nc_gid=tumsBkDFs51bmJjHeOFHWA&_nc_ss=7c289&oh=00_AQH12PaghOORst414P5XHOL0rfWPNNtvMBaOMjj_IZ9cGw&oe=6A9047C2"
+        },
+        "id": "1581268790252415"
+      },
+      {
+        "__typename": "Photo",
+        "accessibility_caption": "May be an image of car and text",
+        "image": {
+          "height": 960,
+          "width": 720,
+          "uri": "https://scontent-iad3-2.xx.fbcdn.net/v/t39.30808-6/736218059_1581268793585748_2364737733067795084_n.jpg?stp=dst-jpg_tt6&cstp=mx1537x2048&ctp=s960x960&_nc_cat=103&ccb=1-7&_nc_sid=946e27&_nc_ohc=JBF1jRkG0eQQ7kNvwGL2cOo&_nc_oc=AdqJNT9ukHdKQ8N0uRxSExh8jKlYvtb7dYcAUYEUjmFyPaOoZr_S3s7dw1Dg8mDZI6THS5bjk5VeGlyWVi-SMOpf&_nc_zt=23&_nc_ht=scontent-iad3-2.xx&_nc_gid=tumsBkDFs51bmJjHeOFHWA&_nc_ss=7c289&oh=00_AQGxRzkgfk_hraQ1DMm7UgKUo1uU9ZDBvjIyn5aNBvRhMg&oe=6A907E72"
+        },
+        "id": "1581268770252417"
+      }
+    ],
+    "listingPrice": {
+      "amount_with_offset": "250000",
+      "currency": "USD",
+      "amount": "2500.00"
+    },
+    "location": {
+      "latitude": 35.950012207031,
+      "longitude": -77.799682617188,
+      "reverse_geocode_detailed": {
+        "country_alpha_two": "US",
+        "postal_code_trimmed": "27804-4829"
+      }
+    },
+    "locationText": {
+      "text": "Rocky Mount, NC"
+    },
+    "listingTitle": "2014 Chevrolet Impala \u00b7 LT Sedan 4D",
+    "description": {
+      "text": ""
+    },
+    "isHidden": false,
+    "isLive": true,
+    "isPending": false,
+    "isSold": false,
+    "isViewerSeller": false,
+    "listingVideo": [],
+    "listingCategoryId": "807311116002614",
+    "customTitle": "2014 Chevrolet impala LT Sedan 4D",
+    "strikethroughPrice": null,
+    "primaryListingPhoto": {
+      "__typename": "Photo",
+      "id": "1581270890252205",
+      "photo_image_url": "https://scontent.fosu2-2.fna.fbcdn.net/v/t39.30808-6/761149173_1605664577812836_6965288223972038099_n.jpg?stp=c256.0.1537.1537a_dst-jpg_tt6&cstp=mx1537x1537&ctp=s261x260&_nc_cat=110&ccb=1-7&_nc_sid=454cf4&_nc_ohc=37mq4Ja8YusQ7kNvwHyDE_u&_nc_oc=Adrd-xiD04gBIgqcpyEI8fmM3ogWvhsFmjhsibOoVMRDlMIHNEyO3eq2eQTejNmQCpoMq-NQ_rozAMN5o8B-DM6X&_nc_zt=23&_nc_ht=scontent.fosu2-2.fna&_nc_gid=3s0dOzslPYeLRFcNPG9XYA&_nc_ss=72289&oh=00_AQH_4iAhfXMG5DbShPrx-AbQ8n5t_lusLsf-d1-Dumq5Lg&oe=6A907B70"
+    },
+    "customSubTitlesWithRenderingFlags": [
+      {
+        "subtitle": "2K miles"
+      }
+    ]
+  }
+]
