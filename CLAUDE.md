@@ -107,4 +107,17 @@ npm run lint         # Run linter
 - Remote development workflow (accessed via iPad/Coder)
 - AI evaluation must be fast and consistent for real-time scoring
 
+## Development Workflow
+
 Leverage the feature branch skill for all changes. A new branch should be created for each chat.
+
+**Standard workflow:**
+1. Create a feature branch at the start
+2. Make changes and commit (with clear commit messages)
+3. When ready to publish, use the `publish-pr` skill to create and open a PR
+
+```
+/publish-pr
+```
+
+PRs are created on-demand once you're satisfied with the work. The skill handles pushing, PR creation, and returns the PR URL.
