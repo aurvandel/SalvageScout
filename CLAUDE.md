@@ -39,3 +39,6 @@ As the project develops, document:
 - **Error handling**: Gracefully handle missing data, network failures, API rate limits
 - **Testing strategy**: Unit tests for scorer logic, integration tests for scraper reliability
 - **Deployment**: Set up CI/CD pipeline; schedule scraper jobs (cron or cloud scheduler)
+
+
+The site can be reached locally at 192.168.86.35:3000
