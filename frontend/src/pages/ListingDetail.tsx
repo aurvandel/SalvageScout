@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { fetchListing } from '../api/client'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { deleteListing, fetchListing, setFavorite, setHidden } from '../api/client'
 import type { ListingOut } from '../api/types'
 import { formatPrice, latestScore } from '../api/listingHelpers'
 import { scoreTier } from '../components/ListingCard'
 
 export default function ListingDetail() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [listing, setListing] = useState<ListingOut | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -24,13 +25,48 @@ export default function ListingDetail() {
 
   const score = latestScore(listing)
 
+  function toggleFavorite() {
+    if (!listing) return
+    const favorite = !listing.is_favorite
+    setListing({ ...listing, is_favorite: favorite })
+    setFavorite(listing.id, favorite).catch(() => window.alert('Failed to update favorite.'))
+  }
+
+  function toggleHidden() {
+    if (!listing) return
+    const hidden = !listing.is_hidden
+    setListing({ ...listing, is_hidden: hidden })
+    setHidden(listing.id, hidden).catch(() => window.alert('Failed to update hidden state.'))
+  }
+
+  function remove() {
+    if (!listing) return
+    if (!window.confirm('Delete this listing? It will not reappear in future searches.')) return
+    deleteListing(listing.id)
+      .then(() => navigate('/'))
+      .catch(() => window.alert('Failed to delete listing.'))
+  }
+
   return (
     <div className="listing-detail">
       <Link to="/" className="back-link">
         ← Back to listings
       </Link>
 
-      <h1>{listing.title}</h1>
+      <div className="listing-detail-header">
+        <h1>{listing.title}</h1>
+        <div className="listing-detail-actions">
+          <button type="button" className={`icon-button${listing.is_favorite ? ' active' : ''}`} onClick={toggleFavorite}>
+            {listing.is_favorite ? '★ Favorited' : '☆ Favorite'}
+          </button>
+          <button type="button" className={`icon-button${listing.is_hidden ? ' active' : ''}`} onClick={toggleHidden}>
+            {listing.is_hidden ? '◉ Unhide' : '◎ Hide'}
+          </button>
+          <button type="button" className="icon-button" onClick={remove}>
+            ✕ Delete
+          </button>
+        </div>
+      </div>
       <p className="listing-detail-price">{formatPrice(listing.price_amount, listing.currency)}</p>
 
       {listing.images.length > 0 && (

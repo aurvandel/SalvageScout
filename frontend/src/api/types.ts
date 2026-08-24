@@ -29,6 +29,10 @@ export interface ListingOut {
   is_live: boolean
   is_pending: boolean
   is_sold: boolean
+  is_favorite: boolean
+  is_hidden: boolean
+  is_deleted: boolean
+  deleted_at: string | null
   location_text: string | null
   year: number | null
   make: string | null
@@ -39,6 +43,13 @@ export interface ListingOut {
   last_seen_at: string
   images: ListingImageOut[]
   scores: ScoreOut[]
+}
+
+export type ListingView = 'active' | 'hidden' | 'favorites'
+
+export interface ListingPage {
+  items: ListingOut[]
+  has_more: boolean
 }
 
 export interface SchedulerConfigOut {
@@ -57,11 +68,59 @@ export interface TriggerSearchResponse {
   total_notifications_sent: number
 }
 
-export interface LLMConfigOut {
-  current_provider: string
-  current_model: string
+export interface LLMSettingsOut {
+  provider: string
+  model: string
   available_providers: string[]
   provider_models: Record<string, string[]>
+  anthropic_api_key_masked: string | null
+  openai_api_key_masked: string | null
+  gemini_api_key_masked: string | null
+}
+
+export interface ApifySettingsOut {
+  actor_id: string
+  apify_token_masked: string | null
+}
+
+export interface NotificationSettingsOut {
+  discord_enabled: boolean
+  discord_webhook_url_masked: string | null
+  telegram_enabled: boolean
+  telegram_bot_token_masked: string | null
+  telegram_chat_id: string | null
+  notification_score_threshold: number
+}
+
+export interface AppSettingsOut {
+  llm: LLMSettingsOut
+  apify: ApifySettingsOut
+  notifications: NotificationSettingsOut
+}
+
+export interface SearchFilterOut {
+  id: number
+  name: string
+  is_active: boolean
+  search_mode: 'url' | 'location'
+  search_url: string | null
+  location: string | null
+  query: string | null
+  min_price: number | null
+  max_price: number | null
+  radius_miles: number | null
+  days_listed: number | null
+  condition: string | null
+}
+
+export interface CriteriaProfileOut {
+  id: number
+  name: string
+  prompt_text: string
+  weights: Record<string, unknown>
+  is_active: boolean
+  version: number
+  created_at: string
 }
 
 export interface ArenaScoreResult {

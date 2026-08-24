@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock
 
+import pytest
+
 from app.models import CriteriaProfile, Listing
 from app.scorer.anthropic_scorer import DEFAULT_MODEL, score_listing
 from app.scorer.schemas import ScoreResult
@@ -25,7 +27,7 @@ def test_score_listing_calls_parse_with_expected_args(mocker):
     mock_client.messages.parse.return_value = MagicMock(parsed_output=expected)
     mocker.patch("app.scorer.anthropic_scorer.anthropic.Anthropic", return_value=mock_client)
 
-    result = score_listing(_listing(), _criteria_profile())
+    result = score_listing(_listing(), _criteria_profile(), api_key="fake-anthropic-key")
 
     assert result == expected
     call_kwargs = mock_client.messages.parse.call_args.kwargs
@@ -41,8 +43,13 @@ def test_score_listing_with_custom_model(mocker):
     mock_client.messages.parse.return_value = MagicMock(parsed_output=expected)
     mocker.patch("app.scorer.anthropic_scorer.anthropic.Anthropic", return_value=mock_client)
 
-    result = score_listing(_listing(), _criteria_profile(), model="claude-opus-4-1")
+    result = score_listing(_listing(), _criteria_profile(), model="claude-opus-4-1", api_key="fake-anthropic-key")
 
     assert result == expected
     call_kwargs = mock_client.messages.parse.call_args.kwargs
     assert call_kwargs["model"] == "claude-opus-4-1"
+
+
+def test_score_listing_raises_when_api_key_missing():
+    with pytest.raises(RuntimeError, match="Anthropic API key"):
+        score_listing(_listing(), _criteria_profile(), api_key=None)

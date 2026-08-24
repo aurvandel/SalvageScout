@@ -47,5 +47,18 @@ class Listing(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
+    # User-driven state, distinct from is_live/is_pending/is_sold (which describe
+    # Marketplace-side state and get overwritten on every re-scrape). Not touched
+    # by ingest_listings()'s upsert, so a soft-deleted/hidden listing stays that
+    # way even after it's seen again in a future search.
+    is_favorite: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    is_hidden: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false", index=True
+    )
+    is_deleted: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false", index=True
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
     images: Mapped[list["ListingImage"]] = relationship(back_populates="listing", cascade="all, delete-orphan")
     scores: Mapped[list["Score"]] = relationship(back_populates="listing", cascade="all, delete-orphan")

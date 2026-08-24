@@ -33,3 +33,13 @@ def update_search_filter(search_filter_id: int, payload: SearchFilterIn, db: Ses
     db.commit()
     db.refresh(search_filter)
     return search_filter
+
+
+@router.delete("/{search_filter_id}", status_code=204)
+def delete_search_filter(search_filter_id: int, db: Session = Depends(get_db)):
+    search_filter = db.get(SearchFilter, search_filter_id)
+    if search_filter is None:
+        raise HTTPException(status_code=404, detail="Search filter not found")
+
+    db.delete(search_filter)
+    db.commit()

@@ -5,12 +5,20 @@ from pydantic import BaseModel
 from app.db import get_db
 from app.models import SchedulerConfig, SearchFilter, ArenaRun, Listing, CriteriaProfile
 from app.schemas.scheduler_config import SchedulerConfigIn, SchedulerConfigOut
-from app.schemas.llm_config import LLMConfigIn, LLMConfigOut, ArenaRunIn, ArenaRunOut, ArenaScoreResult
+from app.schemas.llm_config import ArenaRunIn, ArenaRunOut, ArenaScoreResult
+from app.schemas.app_settings import (
+    AppSettingsOut,
+    ApifySettingsIn,
+    ApifySettingsOut,
+    LLMSettingsIn,
+    LLMSettingsOut,
+    NotificationSettingsIn,
+    NotificationSettingsOut,
+    mask_secret,
+)
 from app.pipeline import run_pipeline_for_filter
-from app.config import settings
 from app.scorer.registry import get_available_providers, get_available_models, get_scorer
-from app.scorer.schemas import ScoreResult
-from app.scorer.base import build_listing_text
+from app.settings_service import get_api_key_for_provider, get_app_settings
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -96,38 +104,109 @@ def trigger_search(db: Session = Depends(get_db)):
     )
 
 
-@router.get("/llm-config", response_model=LLMConfigOut)
-def get_llm_config():
+def _settings_out(config) -> AppSettingsOut:
     providers = get_available_providers()
-    provider_models = {provider: get_available_models(provider) for provider in providers}
-
-    return LLMConfigOut(
-        current_provider=settings.llm_provider,
-        current_model=settings.llm_model or get_available_models(settings.llm_provider)[0],
-        available_providers=providers,
-        provider_models=provider_models,
+    return AppSettingsOut(
+        llm=LLMSettingsOut(
+            provider=config.llm_provider,
+            model=config.llm_model or get_available_models(config.llm_provider)[0],
+            anthropic_api_key_masked=mask_secret(config.anthropic_api_key),
+            openai_api_key_masked=mask_secret(config.openai_api_key),
+            gemini_api_key_masked=mask_secret(config.gemini_api_key),
+            available_providers=providers,
+            provider_models={provider: get_available_models(provider) for provider in providers},
+        ),
+        apify=ApifySettingsOut(
+            apify_token_masked=mask_secret(config.apify_token),
+            actor_id=config.apify_actor_id,
+        ),
+        notifications=NotificationSettingsOut(
+            discord_enabled=config.discord_enabled,
+            discord_webhook_url_masked=mask_secret(config.discord_webhook_url),
+            telegram_enabled=config.telegram_enabled,
+            telegram_bot_token_masked=mask_secret(config.telegram_bot_token),
+            telegram_chat_id=config.telegram_chat_id,
+            notification_score_threshold=config.notification_score_threshold,
+        ),
     )
 
 
-@router.post("/llm-config")
-def update_llm_config(payload: LLMConfigIn):
+@router.get("/settings", response_model=AppSettingsOut)
+def get_settings(db: Session = Depends(get_db)):
+    config = get_app_settings(db)
+    return _settings_out(config)
+
+
+@router.patch("/settings/llm", response_model=AppSettingsOut)
+def update_llm_settings(payload: LLMSettingsIn, db: Session = Depends(get_db)):
+    config = get_app_settings(db)
+    fields = payload.model_dump(exclude_unset=True)
+
+    provider = fields.get("provider", config.llm_provider)
     available_providers = get_available_providers()
-    if payload.provider not in available_providers:
+    if provider not in available_providers:
         raise HTTPException(
-            status_code=400,
-            detail=f"Unknown provider {payload.provider!r}. Available: {available_providers}",
+            status_code=400, detail=f"Unknown provider {provider!r}. Available: {available_providers}"
         )
 
-    available_models = get_available_models(payload.provider)
-    if payload.model not in available_models:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unknown model {payload.model!r} for provider {payload.provider}. Available: {available_models}",
-        )
+    if "model" in fields:
+        available_models = get_available_models(provider)
+        if fields["model"] not in available_models:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown model {fields['model']!r} for provider {provider}. Available: {available_models}",
+            )
+        config.llm_model = fields["model"]
 
-    settings.llm_provider = payload.provider
-    settings.llm_model = payload.model
-    return {"message": "LLM configuration updated"}
+    config.llm_provider = provider
+    if "anthropic_api_key" in fields:
+        config.anthropic_api_key = fields["anthropic_api_key"] or None
+    if "openai_api_key" in fields:
+        config.openai_api_key = fields["openai_api_key"] or None
+    if "gemini_api_key" in fields:
+        config.gemini_api_key = fields["gemini_api_key"] or None
+
+    db.commit()
+    db.refresh(config)
+    return _settings_out(config)
+
+
+@router.patch("/settings/apify", response_model=AppSettingsOut)
+def update_apify_settings(payload: ApifySettingsIn, db: Session = Depends(get_db)):
+    config = get_app_settings(db)
+    fields = payload.model_dump(exclude_unset=True)
+
+    if "apify_token" in fields:
+        config.apify_token = fields["apify_token"] or None
+    if "actor_id" in fields and fields["actor_id"]:
+        config.apify_actor_id = fields["actor_id"]
+
+    db.commit()
+    db.refresh(config)
+    return _settings_out(config)
+
+
+@router.patch("/settings/notifications", response_model=AppSettingsOut)
+def update_notification_settings(payload: NotificationSettingsIn, db: Session = Depends(get_db)):
+    config = get_app_settings(db)
+    fields = payload.model_dump(exclude_unset=True)
+
+    if "discord_enabled" in fields:
+        config.discord_enabled = fields["discord_enabled"]
+    if "discord_webhook_url" in fields:
+        config.discord_webhook_url = fields["discord_webhook_url"] or None
+    if "telegram_enabled" in fields:
+        config.telegram_enabled = fields["telegram_enabled"]
+    if "telegram_bot_token" in fields:
+        config.telegram_bot_token = fields["telegram_bot_token"] or None
+    if "telegram_chat_id" in fields:
+        config.telegram_chat_id = fields["telegram_chat_id"] or None
+    if "notification_score_threshold" in fields:
+        config.notification_score_threshold = fields["notification_score_threshold"]
+
+    db.commit()
+    db.refresh(config)
+    return _settings_out(config)
 
 
 @router.post("/arena-run", response_model=ArenaRunOut)
@@ -156,11 +235,14 @@ def run_arena(payload: ArenaRunIn, db: Session = Depends(get_db)):
                 detail=f"Unknown model {model!r} for provider {provider}. Available: {available_models}",
             )
 
+    config = get_app_settings(db)
+
     results = []
     for provider, model in zip(payload.providers, payload.models):
         try:
             scorer_fn = get_scorer(provider)
-            score_result = scorer_fn(listing, criteria_profile, model)
+            api_key = get_api_key_for_provider(config, provider)
+            score_result = scorer_fn(listing, criteria_profile, model, api_key)
             results.append(
                 ArenaScoreResult(
                     provider=provider,

@@ -1,4 +1,14 @@
-import type { ListingOut, SchedulerConfigOut, TriggerSearchResponse, LLMConfigOut, ArenaRunOut } from './types'
+import type {
+  ListingOut,
+  ListingPage,
+  ListingView,
+  SchedulerConfigOut,
+  TriggerSearchResponse,
+  AppSettingsOut,
+  ArenaRunOut,
+  SearchFilterOut,
+  CriteriaProfileOut,
+} from './types'
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(path, options)
@@ -8,13 +18,35 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export function fetchListings(minScore?: number): Promise<ListingOut[]> {
-  const query = minScore != null ? `?min_score=${minScore}` : ''
-  return request<ListingOut[]>(`/api/listings${query}`)
+export function fetchListings(params: {
+  minScore?: number
+  view?: ListingView
+  limit?: number
+  offset?: number
+}): Promise<ListingPage> {
+  const query = new URLSearchParams()
+  if (params.minScore != null) query.set('min_score', String(params.minScore))
+  if (params.view != null) query.set('view', params.view)
+  if (params.limit != null) query.set('limit', String(params.limit))
+  if (params.offset != null) query.set('offset', String(params.offset))
+  const qs = query.toString()
+  return request<ListingPage>(`/api/listings${qs ? `?${qs}` : ''}`)
 }
 
 export function fetchListing(id: number): Promise<ListingOut> {
   return request<ListingOut>(`/api/listings/${id}`)
+}
+
+export function setFavorite(id: number, favorite: boolean): Promise<ListingOut> {
+  return request<ListingOut>(`/api/listings/${id}/favorite?favorite=${favorite}`, { method: 'PATCH' })
+}
+
+export function setHidden(id: number, hidden: boolean): Promise<ListingOut> {
+  return request<ListingOut>(`/api/listings/${id}/hide?hidden=${hidden}`, { method: 'PATCH' })
+}
+
+export function deleteListing(id: number): Promise<ListingOut> {
+  return request<ListingOut>(`/api/listings/${id}`, { method: 'DELETE' })
 }
 
 export function fetchSchedulerConfig(): Promise<SchedulerConfigOut> {
@@ -40,19 +72,79 @@ export function triggerSearch(): Promise<TriggerSearchResponse> {
   })
 }
 
-export function fetchLLMConfig(): Promise<LLMConfigOut> {
-  return request<LLMConfigOut>('/api/admin/llm-config')
+export function fetchSettings(): Promise<AppSettingsOut> {
+  return request<AppSettingsOut>('/api/admin/settings')
 }
 
-export async function updateLLMConfig(config: {
-  provider: string
-  model: string
-}): Promise<{ message: string }> {
-  return request<{ message: string }>('/api/admin/llm-config', {
+export function updateLLMSettings(fields: {
+  provider?: string
+  model?: string
+  anthropic_api_key?: string
+  openai_api_key?: string
+  gemini_api_key?: string
+}): Promise<AppSettingsOut> {
+  return request<AppSettingsOut>('/api/admin/settings/llm', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fields),
+  })
+}
+
+export function updateApifySettings(fields: {
+  apify_token?: string
+  actor_id?: string
+}): Promise<AppSettingsOut> {
+  return request<AppSettingsOut>('/api/admin/settings/apify', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fields),
+  })
+}
+
+export function updateNotificationSettings(fields: {
+  discord_enabled?: boolean
+  discord_webhook_url?: string
+  telegram_enabled?: boolean
+  telegram_bot_token?: string
+  telegram_chat_id?: string
+  notification_score_threshold?: number
+}): Promise<AppSettingsOut> {
+  return request<AppSettingsOut>('/api/admin/settings/notifications', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fields),
+  })
+}
+
+export function fetchSearchFilters(): Promise<SearchFilterOut[]> {
+  return request<SearchFilterOut[]>('/api/search-filters')
+}
+
+export function createSearchFilter(payload: Partial<SearchFilterOut>): Promise<SearchFilterOut> {
+  return request<SearchFilterOut>('/api/search-filters', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(config),
+    body: JSON.stringify(payload),
   })
+}
+
+export function updateSearchFilter(id: number, payload: Partial<SearchFilterOut>): Promise<SearchFilterOut> {
+  return request<SearchFilterOut>(`/api/search-filters/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteSearchFilter(id: number): Promise<void> {
+  const response = await fetch(`/api/search-filters/${id}`, { method: 'DELETE' })
+  if (!response.ok) {
+    throw new Error(`/api/search-filters/${id} failed: ${response.status}`)
+  }
+}
+
+export function fetchCriteriaProfiles(): Promise<CriteriaProfileOut[]> {
+  return request<CriteriaProfileOut[]>('/api/criteria-profiles')
 }
 
 export async function runArenaTest(params: {

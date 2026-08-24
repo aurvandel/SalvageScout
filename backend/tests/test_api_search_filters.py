@@ -33,3 +33,49 @@ def test_update_search_filter_not_found(client):
         "/api/search-filters/999999", json={"name": "x", "search_url": "https://example.com"}
     )
     assert response.status_code == 404
+
+
+def test_create_location_mode_search_filter(client):
+    payload = {
+        "name": "sedans in NYC",
+        "search_mode": "location",
+        "location": "newyork",
+        "query": "sedan",
+        "min_price": 1000,
+        "max_price": 5000,
+    }
+
+    response = client.post("/api/search-filters", json=payload)
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["search_mode"] == "location"
+    assert body["location"] == "newyork"
+    assert body["min_price"] == 1000
+
+
+def test_create_url_mode_without_search_url_rejected(client):
+    response = client.post("/api/search-filters", json={"name": "x", "search_mode": "url"})
+    assert response.status_code == 422
+
+
+def test_create_location_mode_without_location_rejected(client):
+    response = client.post("/api/search-filters", json={"name": "x", "search_mode": "location"})
+    assert response.status_code == 422
+
+
+def test_delete_search_filter(client):
+    created = client.post(
+        "/api/search-filters", json={"name": "to delete", "search_url": "https://example.com/1"}
+    ).json()
+
+    delete_response = client.delete(f"/api/search-filters/{created['id']}")
+    assert delete_response.status_code == 204
+
+    list_response = client.get("/api/search-filters")
+    assert created["id"] not in [sf["id"] for sf in list_response.json()]
+
+
+def test_delete_search_filter_not_found(client):
+    response = client.delete("/api/search-filters/999999")
+    assert response.status_code == 404

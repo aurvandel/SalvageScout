@@ -43,7 +43,7 @@ def _make_score(db, listing, match_score, **overrides):
 def test_list_listings_empty(client):
     response = client.get("/api/listings")
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json() == {"items": [], "has_more": False}
 
 
 def test_list_listings_orders_by_best_score_desc(db, client):
@@ -54,7 +54,7 @@ def test_list_listings_orders_by_best_score_desc(db, client):
 
     response = client.get("/api/listings")
 
-    ids = [item["fb_listing_id"] for item in response.json()]
+    ids = [item["fb_listing_id"] for item in response.json()["items"]]
     assert ids == ["high", "low"]
 
 
@@ -65,7 +65,7 @@ def test_list_listings_unscored_appear_last(db, client):
 
     response = client.get("/api/listings")
 
-    ids = [item["fb_listing_id"] for item in response.json()]
+    ids = [item["fb_listing_id"] for item in response.json()["items"]]
     assert ids == ["scored", "unscored"]
 
 
@@ -77,8 +77,125 @@ def test_list_listings_min_score_filter(db, client):
 
     response = client.get("/api/listings", params={"min_score": 70})
 
-    ids = [item["fb_listing_id"] for item in response.json()]
+    ids = [item["fb_listing_id"] for item in response.json()["items"]]
     assert ids == ["high"]
+
+
+def test_list_listings_pagination(db, client):
+    for i in range(5):
+        _make_listing(db, f"listing-{i}")
+
+    first_page = client.get("/api/listings", params={"limit": 2, "offset": 0}).json()
+    assert len(first_page["items"]) == 2
+    assert first_page["has_more"] is True
+
+    second_page = client.get("/api/listings", params={"limit": 2, "offset": 2}).json()
+    assert len(second_page["items"]) == 2
+    assert second_page["has_more"] is True
+
+    third_page = client.get("/api/listings", params={"limit": 2, "offset": 4}).json()
+    assert len(third_page["items"]) == 1
+    assert third_page["has_more"] is False
+
+    seen_ids = {item["id"] for page in (first_page, second_page, third_page) for item in page["items"]}
+    assert len(seen_ids) == 5
+
+
+def test_list_listings_excludes_deleted_and_hidden(db, client):
+    active = _make_listing(db, "active")
+    hidden = _make_listing(db, "hidden", is_hidden=True)
+    deleted = _make_listing(db, "deleted", is_deleted=True)
+
+    response = client.get("/api/listings")
+
+    ids = [item["fb_listing_id"] for item in response.json()["items"]]
+    assert ids == ["active"]
+
+
+def test_list_listings_view_hidden(db, client):
+    _make_listing(db, "active")
+    _make_listing(db, "hidden", is_hidden=True)
+    _make_listing(db, "deleted", is_deleted=True)
+
+    response = client.get("/api/listings", params={"view": "hidden"})
+
+    ids = [item["fb_listing_id"] for item in response.json()["items"]]
+    assert ids == ["hidden"]
+
+
+def test_list_listings_view_favorites_excludes_hidden(db, client):
+    _make_listing(db, "favorite", is_favorite=True)
+    _make_listing(db, "favorite-and-hidden", is_favorite=True, is_hidden=True)
+    _make_listing(db, "not-favorite")
+
+    response = client.get("/api/listings", params={"view": "favorites"})
+
+    ids = [item["fb_listing_id"] for item in response.json()["items"]]
+    assert ids == ["favorite"]
+
+
+def test_set_favorite(db, client):
+    listing = _make_listing(db, "to-favorite")
+
+    response = client.patch(f"/api/listings/{listing.id}/favorite", params={"favorite": True})
+    assert response.status_code == 200
+    assert response.json()["is_favorite"] is True
+
+    response = client.patch(f"/api/listings/{listing.id}/favorite", params={"favorite": False})
+    assert response.json()["is_favorite"] is False
+
+
+def test_set_hidden(db, client):
+    listing = _make_listing(db, "to-hide")
+
+    response = client.patch(f"/api/listings/{listing.id}/hide", params={"hidden": True})
+    assert response.status_code == 200
+    assert response.json()["is_hidden"] is True
+
+    active_ids = [item["fb_listing_id"] for item in client.get("/api/listings").json()["items"]]
+    assert "to-hide" not in active_ids
+
+    response = client.patch(f"/api/listings/{listing.id}/hide", params={"hidden": False})
+    assert response.json()["is_hidden"] is False
+    active_ids = [item["fb_listing_id"] for item in client.get("/api/listings").json()["items"]]
+    assert "to-hide" in active_ids
+
+
+def test_delete_listing_soft_deletes(db, client):
+    listing = _make_listing(db, "to-delete")
+
+    response = client.delete(f"/api/listings/{listing.id}")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["is_deleted"] is True
+    assert body["deleted_at"] is not None
+
+    for view in ("active", "hidden", "favorites"):
+        ids = [item["fb_listing_id"] for item in client.get("/api/listings", params={"view": view}).json()["items"]]
+        assert "to-delete" not in ids
+
+
+def test_delete_listing_survives_reingest(db, client, raw_listing):
+    """A soft-deleted listing must not reappear once ingest_listings() re-upserts
+    the same fb_listing_id on a later scrape."""
+    from app.models import SearchFilter
+    from app.scraper.ingest import ingest_listings
+
+    search_filter = SearchFilter(name="test", search_url="https://example.com")
+    db.add(search_filter)
+    db.commit()
+    db.refresh(search_filter)
+
+    listing = _make_listing(db, raw_listing["id"])
+    client.delete(f"/api/listings/{listing.id}")
+
+    ingest_listings(db, search_filter, [raw_listing])
+
+    refreshed = db.get(type(listing), listing.id)
+    assert refreshed.is_deleted is True
+
+    active_ids = [item["fb_listing_id"] for item in client.get("/api/listings").json()["items"]]
+    assert raw_listing["id"] not in active_ids
 
 
 def test_get_listing_detail_includes_scores(db, client):

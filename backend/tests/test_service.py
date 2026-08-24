@@ -1,5 +1,6 @@
 from app.models import Listing, SearchFilter
 from app.scraper import service
+from app.settings_service import get_app_settings
 
 
 def test_run_scrape_fetches_and_ingests(db, raw_listings, mocker, monkeypatch):
@@ -15,4 +16,8 @@ def test_run_scrape_fetches_and_ingests(db, raw_listings, mocker, monkeypatch):
 
     assert len(touched) == 3
     assert db.query(Listing).count() == 3
-    service.fetch_listings.assert_called_once_with(sf.search_url, 10)
+
+    config = get_app_settings(db)
+    service.fetch_listings.assert_called_once_with(
+        sf.search_url, 10, apify_token=config.apify_token, actor_id=config.apify_actor_id
+    )

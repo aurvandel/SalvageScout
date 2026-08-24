@@ -33,6 +33,14 @@ a {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.feed-toolbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .feed-toolbar label {
@@ -48,6 +56,33 @@ a {
   padding: 4px 8px;
   border: 1px solid var(--border);
   border-radius: 6px;
+}
+
+.view-tabs {
+  display: flex;
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.view-tab {
+  border: none;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.view-tab.active {
+  background: #1a1a1e;
+  color: #fff;
+}
+
+.feed-sentinel {
+  height: 1px;
 }
 
 .error {
@@ -95,6 +130,36 @@ a {
   font-weight: 600;
   font-size: 14px;
   color: #fff;
+}
+
+.listing-card-actions {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  gap: 4px;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1a1a1e;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.icon-button.active {
+  background: #1a1a1e;
+  color: #fff;
+  border-color: #1a1a1e;
 }
 
 .score-high {
@@ -148,6 +213,29 @@ a {
   display: inline-block;
   margin-bottom: 16px;
   color: var(--muted);
+}
+
+.listing-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.listing-detail-header h1 {
+  margin: 0;
+}
+
+.listing-detail-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.listing-detail-actions .icon-button {
+  min-width: unset;
+  border-radius: 8px;
+  padding: 6px 12px;
 }
 
 .listing-detail-price {

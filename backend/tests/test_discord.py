@@ -2,7 +2,7 @@ import httpx
 import pytest
 import respx
 
-from app.models import Listing, Score
+from app.models import AppSettings, Listing, Score
 from app.notifier.discord import send
 
 
@@ -14,12 +14,15 @@ def _score():
     return Score(match_score=85, summary="Good deal.", pros=[], cons=[], dealbreaker_flags=[], model_used="claude-haiku-4-5")
 
 
+def _config(webhook_url):
+    return AppSettings(discord_webhook_url=webhook_url)
+
+
 @respx.mock
-def test_send_posts_to_configured_webhook(monkeypatch):
-    monkeypatch.setattr("app.notifier.discord.settings.discord_webhook_url", "https://discord.com/api/webhooks/x/y")
+def test_send_posts_to_configured_webhook():
     route = respx.post("https://discord.com/api/webhooks/x/y").mock(return_value=httpx.Response(204))
 
-    send(_listing(), _score())
+    send(_listing(), _score(), _config("https://discord.com/api/webhooks/x/y"))
 
     assert route.called
     payload = route.calls.last.request.content
@@ -27,17 +30,15 @@ def test_send_posts_to_configured_webhook(monkeypatch):
 
 
 @respx.mock
-def test_send_raises_on_http_error(monkeypatch):
-    monkeypatch.setattr("app.notifier.discord.settings.discord_webhook_url", "https://discord.com/api/webhooks/x/y")
+def test_send_raises_on_http_error():
     respx.post("https://discord.com/api/webhooks/x/y").mock(return_value=httpx.Response(400))
 
     with pytest.raises(httpx.HTTPStatusError):
-        send(_listing(), _score())
+        send(_listing(), _score(), _config("https://discord.com/api/webhooks/x/y"))
 
 
 @respx.mock
-def test_send_truncates_over_limit_message(monkeypatch):
-    monkeypatch.setattr("app.notifier.discord.settings.discord_webhook_url", "https://discord.com/api/webhooks/x/y")
+def test_send_truncates_over_limit_message():
     route = respx.post("https://discord.com/api/webhooks/x/y").mock(return_value=httpx.Response(204))
 
     listing = Listing(
@@ -47,7 +48,7 @@ def test_send_truncates_over_limit_message(monkeypatch):
         match_score=85, summary="x" * 3000, pros=[], cons=[], dealbreaker_flags=[], model_used="claude-haiku-4-5"
     )
 
-    send(listing, score)
+    send(listing, score, _config("https://discord.com/api/webhooks/x/y"))
 
     import json
 
@@ -56,8 +57,6 @@ def test_send_truncates_over_limit_message(monkeypatch):
     assert payload["content"].endswith("https://example.com/listing/1")
 
 
-def test_send_raises_when_not_configured(monkeypatch):
-    monkeypatch.setattr("app.notifier.discord.settings.discord_webhook_url", None)
-
+def test_send_raises_when_not_configured():
     with pytest.raises(RuntimeError, match="DISCORD_WEBHOOK_URL"):
-        send(_listing(), _score())
+        send(_listing(), _score(), _config(None))

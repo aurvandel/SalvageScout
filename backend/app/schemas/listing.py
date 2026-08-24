@@ -39,6 +39,10 @@ class ListingOut(BaseModel):
     is_live: bool
     is_pending: bool
     is_sold: bool
+    is_favorite: bool
+    is_hidden: bool
+    is_deleted: bool
+    deleted_at: datetime | None
     location_text: str | None
     year: int | None
     make: str | None
@@ -49,3 +53,8 @@ class ListingOut(BaseModel):
     last_seen_at: datetime
     images: list[ListingImageOut] = []
     scores: list[ScoreOut] = []
+
+
+class ListingPage(BaseModel):
+    items: list[ListingOut]
+    has_more: bool
