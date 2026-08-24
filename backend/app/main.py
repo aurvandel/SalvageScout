@@ -1,8 +1,16 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.api import criteria_profiles, listings, pipeline, search_filters
+from app.config import settings
 
 app = FastAPI(title="SalvageScout")
+
+app.mount(
+    "/media",
+    StaticFiles(directory=settings.image_storage_dir, check_dir=False),
+    name="media",
+)
 
 app.include_router(listings.router, prefix="/api/listings", tags=["listings"])
 app.include_router(search_filters.router, prefix="/api/search-filters", tags=["search-filters"])

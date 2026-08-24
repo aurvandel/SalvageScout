@@ -1,4 +1,4 @@
-from app.models import CriteriaProfile, Listing, Score
+from app.models import CriteriaProfile, Listing, ListingImage, Score
 
 
 def _make_listing(db, fb_listing_id, **overrides):
@@ -97,3 +97,33 @@ def test_get_listing_detail_includes_scores(db, client):
 def test_get_listing_not_found(client):
     response = client.get("/api/listings/999999")
     assert response.status_code == 404
+
+
+def test_listing_image_url_derived_from_local_path(db, client):
+    listing = _make_listing(db, "with-image")
+    db.add(ListingImage(listing_id=listing.id, local_path="data/images/with-image/0.jpg", position=0))
+    db.commit()
+
+    response = client.get(f"/api/listings/{listing.id}")
+
+    assert response.json()["images"][0]["image_url"] == "/media/with-image/0.jpg"
+
+
+def test_listing_image_url_survives_storage_dir_drift(db, client):
+    # local_path prefix doesn't have to match the *current* image_storage_dir
+    # setting (e.g. a row written under a different config) — image_url should
+    # still resolve from the fb_listing_id/file segments rather than raising.
+    listing = _make_listing(db, "drifted")
+    db.add(
+        ListingImage(
+            listing_id=listing.id,
+            local_path="/some/other/root/drifted/2.jpg",
+            position=2,
+        )
+    )
+    db.commit()
+
+    response = client.get(f"/api/listings/{listing.id}")
+
+    assert response.status_code == 200
+    assert response.json()["images"][0]["image_url"] == "/media/drifted/2.jpg"

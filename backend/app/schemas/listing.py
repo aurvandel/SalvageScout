@@ -1,6 +1,7 @@
 from datetime import datetime
+from pathlib import PurePath
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, computed_field
 
 from app.schemas.score import ScoreOut
 
@@ -11,6 +12,16 @@ class ListingImageOut(BaseModel):
     id: int
     local_path: str
     position: int
+
+    @computed_field
+    @property
+    def image_url(self) -> str:
+        # local_path is always written as "<image_storage_dir>/<fb_listing_id>/<file>"
+        # (see app/scraper/images.py) — use the last two segments rather than
+        # stripping settings.image_storage_dir, since that setting can drift between
+        # when a row was written and when it's read without invalidating the path shape.
+        parts = PurePath(self.local_path).parts[-2:]
+        return f"/media/{'/'.join(parts)}"
 
 
 class ListingOut(BaseModel):
