@@ -40,3 +40,46 @@ export interface ListingOut {
   images: ListingImageOut[]
   scores: ScoreOut[]
 }
+
+export interface SchedulerConfigOut {
+  id: number
+  is_enabled: boolean
+  run_hour: number
+  run_minute: number
+  updated_at: string
+}
+
+export interface TriggerSearchResponse {
+  message: string
+  filters_triggered: number
+  total_listings_processed: number
+  total_scores_created: number
+  total_notifications_sent: number
+}
+
+export interface LLMConfigOut {
+  current_provider: string
+  current_model: string
+  available_providers: string[]
+  provider_models: Record<string, string[]>
+}
+
+export interface ArenaScoreResult {
+  provider: string
+  model: string
+  match_score: number
+  summary: string
+  pros: string[]
+  cons: string[]
+  dealbreaker_flags: string[]
+}
+
+export interface ArenaRunOut {
+  id: number
+  listing_id: number
+  criteria_profile_id: number
+  providers: string[]
+  models: string[]
+  results: ArenaScoreResult[]
+  created_at: string
+}

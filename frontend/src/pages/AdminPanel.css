@@ -1,0 +1,482 @@
+.admin-panel {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.admin-panel h1 {
+  color: #333;
+  margin-bottom: 30px;
+  font-size: 2.5rem;
+}
+
+.admin-section {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.admin-section h2 {
+  color: #555;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 10px;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  border: 1px solid #f5c6cb;
+}
+
+.scheduler-config {
+  background: white;
+  padding: 20px;
+  border-radius: 6px;
+  border: 1px solid #eee;
+}
+
+.config-item {
+  margin-bottom: 20px;
+}
+
+.config-item label {
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  gap: 10px;
+}
+
+.config-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.help-text {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 10px 0 0 30px;
+}
+
+.time-picker {
+  background: #f5f5f5;
+  padding: 15px;
+  border-radius: 6px;
+  margin: 20px 0;
+  border-left: 4px solid #007bff;
+}
+
+.time-input {
+  display: inline-block;
+  margin-right: 20px;
+  margin-bottom: 10px;
+}
+
+.time-input label {
+  display: block;
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.time-input input {
+  width: 60px;
+  padding: 8px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.time-input input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.time-display {
+  margin-top: 10px;
+  padding: 10px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+.time-display strong {
+  font-size: 1.1rem;
+  color: #007bff;
+}
+
+.save-button {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 30px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 15px;
+  transition: background-color 0.3s;
+}
+
+.save-button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.save-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.config-info {
+  margin-top: 20px;
+  padding: 10px;
+  background: #e7f3ff;
+  border-left: 4px solid #2196F3;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.run-button {
+  background-color: #28a745;
+  color: white;
+  padding: 10px 30px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 15px;
+  transition: background-color 0.3s;
+}
+
+.run-button:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.run-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.run-results {
+  margin-top: 20px;
+  padding: 20px;
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+}
+
+.results-header {
+  color: #155724;
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.result-item {
+  background: white;
+  padding: 15px;
+  border-radius: 4px;
+  text-align: center;
+  border: 1px solid #c3e6cb;
+}
+
+.result-label {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+
+.result-value {
+  color: #155724;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.llm-config {
+  background: white;
+  padding: 20px;
+  border-radius: 6px;
+  border: 1px solid #eee;
+}
+
+.llm-config .config-item select {
+  width: 100%;
+  padding: 8px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-top: 5px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.llm-config .config-item select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.llm-config .config-item label {
+  display: block;
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 5px;
+  cursor: auto;
+}
+
+.arena-results {
+  margin-top: 20px;
+  padding: 20px;
+  background: #f0f8ff;
+  border: 1px solid #b3d9ff;
+  border-radius: 4px;
+}
+
+.arena-results h3 {
+  color: #0056b3;
+  margin-bottom: 15px;
+}
+
+.arena-comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 15px;
+}
+
+.arena-card {
+  background: white;
+  border: 1px solid #b3d9ff;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  background: #007bff;
+  color: white;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header strong {
+  font-size: 1rem;
+}
+
+.score-badge {
+  background: rgba(255, 255, 255, 0.3);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.card-body {
+  padding: 15px;
+}
+
+.card-body .summary {
+  color: #333;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.lists {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.list-section {
+  padding: 10px;
+  background: #f9f9f9;
+  border-radius: 4px;
+  border-left: 3px solid #007bff;
+}
+
+.list-section strong {
+  display: block;
+  color: #555;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.list-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.list-section li {
+  padding: 4px 0;
+  color: #666;
+  font-size: 0.85rem;
+  margin-left: 10px;
+}
+
+.list-section li:before {
+  content: "• ";
+  color: #007bff;
+  margin-right: 5px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .llm-config {
+    background: #1e1e1e;
+    border-color: #444;
+  }
+
+  .llm-config .config-item select {
+    background-color: #444;
+    color: #ddd;
+    border-color: #555;
+  }
+
+  .llm-config .config-item select:focus {
+    border-color: #5db3ff;
+    box-shadow: 0 0 5px rgba(93, 179, 255, 0.5);
+  }
+
+  .llm-config .config-item label {
+    color: #aaa;
+  }
+
+  .arena-results {
+    background: #1a3a52;
+    border-color: #2d5a70;
+  }
+
+  .arena-results h3 {
+    color: #6fbfff;
+  }
+
+  .arena-card {
+    background: #2a2a2a;
+    border-color: #444;
+  }
+
+  .card-header {
+    background: #0056b3;
+  }
+
+  .card-body .summary {
+    color: #ddd;
+  }
+
+  .list-section {
+    background: #333;
+    border-left-color: #5db3ff;
+  }
+
+  .list-section strong {
+    color: #aaa;
+  }
+
+  .list-section li {
+    color: #bbb;
+  }
+
+  .list-section li:before {
+    color: #5db3ff;
+  }
+  .admin-panel h1 {
+    color: #fff;
+  }
+
+  .admin-section {
+    background: #2a2a2a;
+    border-color: #444;
+  }
+
+  .admin-section h2 {
+    color: #ddd;
+  }
+
+  .scheduler-config {
+    background: #1e1e1e;
+    border-color: #444;
+  }
+
+  .config-item label {
+    color: #ddd;
+  }
+
+  .help-text {
+    color: #999;
+  }
+
+  .time-picker {
+    background: #333;
+    border-left-color: #5db3ff;
+  }
+
+  .time-input label {
+    color: #aaa;
+  }
+
+  .time-input input {
+    background: #444;
+    color: #ddd;
+    border-color: #555;
+  }
+
+  .time-input input:focus {
+    border-color: #5db3ff;
+    box-shadow: 0 0 5px rgba(93, 179, 255, 0.5);
+  }
+
+  .time-display {
+    background: #333;
+    border-color: #555;
+  }
+
+  .time-display strong {
+    color: #5db3ff;
+  }
+
+  .config-info {
+    background: #1a3a52;
+    border-left-color: #5db3ff;
+    color: #aaa;
+  }
+
+  .run-results {
+    background: #1a3a2e;
+    border-color: #2d5a42;
+  }
+
+  .results-header {
+    color: #6fff6f;
+  }
+
+  .result-item {
+    background: #1e1e1e;
+    border-color: #2d5a42;
+  }
+
+  .result-label {
+    color: #aaa;
+  }
+
+  .result-value {
+    color: #6fff6f;
+  }
+}

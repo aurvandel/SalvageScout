@@ -1,10 +1,11 @@
 import logging
+import time
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from app.db import SessionLocal
-from app.models import SearchFilter
+from app.models import SearchFilter, SchedulerConfig
 from app.pipeline import run_pipeline_for_filter
 
 logging.basicConfig(level=logging.INFO)
@@ -33,10 +34,37 @@ def run_all_active_filters() -> None:
         db.close()
 
 
+def get_scheduler_config():
+    db = SessionLocal()
+    try:
+        config = db.query(SchedulerConfig).filter_by(id=1).first()
+        if config is None:
+            config = SchedulerConfig(id=1, is_enabled=True, run_hour=6, run_minute=0)
+            db.add(config)
+            db.commit()
+        return config
+    finally:
+        db.close()
+
+
 def main() -> None:
     scheduler = BlockingScheduler()
-    scheduler.add_job(run_all_active_filters, CronTrigger(hour=6, minute=0), id="daily_scrape")
-    logger.info("Scheduler started — daily run at 06:00 UTC. Use the API's /api/pipeline/run endpoint for on-demand runs.")
+    config = get_scheduler_config()
+
+    if config.is_enabled:
+        scheduler.add_job(
+            run_all_active_filters,
+            CronTrigger(hour=config.run_hour, minute=config.run_minute),
+            id="daily_scrape"
+        )
+        logger.info(
+            "Scheduler started — daily run at %02d:%02d UTC. Use the API's /api/pipeline/run endpoint for on-demand runs.",
+            config.run_hour,
+            config.run_minute
+        )
+    else:
+        logger.info("Scheduler is disabled. Use the API's /api/pipeline/run endpoint for manual runs.")
+
     scheduler.start()
 
 

@@ -22,7 +22,7 @@ def _seed(db):
 def test_score_and_store_writes_score_row(db, mocker):
     listing, profile = _seed(db)
     fake_result = ScoreResult(match_score=72, summary="Decent deal.", pros=["Low price"], cons=["Old"], dealbreaker_flags=[])
-    mocker.patch("app.scorer.service.get_scorer", return_value=lambda l, c: fake_result)
+    mocker.patch("app.scorer.service.get_scorer", return_value=lambda l, c, m: fake_result)
 
     score = score_and_store(db, listing, profile, provider="anthropic")
 
@@ -34,14 +34,14 @@ def test_score_and_store_writes_score_row(db, mocker):
     assert score.pros == ["Low price"]
     assert score.cons == ["Old"]
     assert score.dealbreaker_flags == []
-    assert score.model_used == "claude-haiku-4-5"
+    assert score.model_used == "anthropic/claude-haiku-4-5"
     assert db.query(Score).count() == 1
 
 
 def test_score_and_store_defaults_to_configured_provider(db, mocker):
     listing, profile = _seed(db)
     fake_result = ScoreResult(match_score=50, summary="Meh.", pros=[], cons=[], dealbreaker_flags=[])
-    get_scorer_mock = mocker.patch("app.scorer.service.get_scorer", return_value=lambda l, c: fake_result)
+    get_scorer_mock = mocker.patch("app.scorer.service.get_scorer", return_value=lambda l, c, m: fake_result)
 
     score_and_store(db, listing, profile)  # no provider passed
 

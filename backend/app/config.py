@@ -13,11 +13,14 @@ class Settings(BaseSettings):
     database_url: str
     apify_token: str
     anthropic_api_key: str
+    openai_api_key: str | None = None
+    gemini_api_key: str | None = None
     discord_webhook_url: str | None = None
     telegram_bot_token: str | None = None
     telegram_chat_id: str | None = None
     image_storage_dir: str = "data/images"
     llm_provider: str = "anthropic"
+    llm_model: str = ""
     notification_score_threshold: int = 70
 
 

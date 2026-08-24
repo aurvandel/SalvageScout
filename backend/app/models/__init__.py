@@ -4,6 +4,9 @@ from app.models.listing_image import ListingImage
 from app.models.criteria_profile import CriteriaProfile
 from app.models.score import Score
 from app.models.notification_log import NotificationLog
+from app.models.scheduler_config import SchedulerConfig
+from app.models.arena_run import ArenaRun
+from app.models.app_settings import AppSettings
 
 __all__ = [
     "SearchFilter",
@@ -12,4 +15,7 @@ __all__ = [
     "CriteriaProfile",
     "Score",
     "NotificationLog",
+    "SchedulerConfig",
+    "ArenaRun",
+    "AppSettings",
 ]

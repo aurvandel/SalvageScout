@@ -2,14 +2,21 @@ from typing import Any
 
 from apify_client import ApifyClient
 
-from app.config import settings
-
 ACTOR_ID = "apify/facebook-marketplace-scraper"
 
 
-def fetch_listings(search_url: str, results_limit: int, include_details: bool = True) -> list[dict[str, Any]]:
-    client = ApifyClient(settings.apify_token)
-    run = client.actor(ACTOR_ID).call(
+def fetch_listings(
+    search_url: str,
+    results_limit: int,
+    include_details: bool = True,
+    apify_token: str | None = None,
+    actor_id: str = ACTOR_ID,
+) -> list[dict[str, Any]]:
+    if not apify_token:
+        raise RuntimeError("Apify token is not configured")
+
+    client = ApifyClient(apify_token)
+    run = client.actor(actor_id).call(
         run_input={
             "startUrls": [{"url": search_url}],
             "resultsLimit": results_limit,

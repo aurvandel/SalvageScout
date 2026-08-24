@@ -22,15 +22,15 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgresql+psycopg://salvagescout:salvagescout@db:5432/salvagescout
+      PYTHONPATH: /app
     depends_on:
       db:
         condition: service_healthy
     volumes:
-      - ./backend:/app
       - images_data:/app/data
     ports:
       - "8000:8000"
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    command: sh -c "cd /app && alembic upgrade head && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
@@ -53,12 +53,11 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgresql+psycopg://salvagescout:salvagescout@db:5432/salvagescout
-      RUN_MIGRATIONS: "false"
+      PYTHONPATH: /app
     depends_on:
       backend:
         condition: service_healthy
     volumes:
-      - ./backend:/app
       - images_data:/app/data
     command: ["python", "-m", "app.scheduler"]
 

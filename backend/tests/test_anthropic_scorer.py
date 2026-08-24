@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 from app.models import CriteriaProfile, Listing
-from app.scorer.anthropic_scorer import MODEL, score_listing
+from app.scorer.anthropic_scorer import DEFAULT_MODEL, score_listing
 from app.scorer.schemas import ScoreResult
 
 
@@ -29,7 +29,20 @@ def test_score_listing_calls_parse_with_expected_args(mocker):
 
     assert result == expected
     call_kwargs = mock_client.messages.parse.call_args.kwargs
-    assert call_kwargs["model"] == MODEL
+    assert call_kwargs["model"] == DEFAULT_MODEL
     assert call_kwargs["system"] == "Score this car for a budget beater search."
     assert call_kwargs["output_format"] is ScoreResult
     assert "2014 Chevrolet Impala" in call_kwargs["messages"][0]["content"]
+
+
+def test_score_listing_with_custom_model(mocker):
+    expected = ScoreResult(match_score=75, summary="Good deal.", pros=["Reliable"], cons=["Expensive"], dealbreaker_flags=[])
+    mock_client = MagicMock()
+    mock_client.messages.parse.return_value = MagicMock(parsed_output=expected)
+    mocker.patch("app.scorer.anthropic_scorer.anthropic.Anthropic", return_value=mock_client)
+
+    result = score_listing(_listing(), _criteria_profile(), model="claude-opus-4-1")
+
+    assert result == expected
+    call_kwargs = mock_client.messages.parse.call_args.kwargs
+    assert call_kwargs["model"] == "claude-opus-4-1"

@@ -10,7 +10,9 @@ class Scorer(Protocol):
     'LLM provider comparison spike' item for why this exists before OpenAI/
     Gemini implementations do."""
 
-    def __call__(self, listing: Listing, criteria_profile: CriteriaProfile) -> ScoreResult: ...
+    def __call__(
+        self, listing: Listing, criteria_profile: CriteriaProfile, model: str, api_key: str | None
+    ) -> ScoreResult: ...
 
 
 def build_listing_text(listing: Listing) -> str:

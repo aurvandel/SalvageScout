@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from app.models import Listing, Score
+from app.models import AppSettings, Listing, Score
 
 
 class Notifier(Protocol):
@@ -8,7 +8,7 @@ class Notifier(Protocol):
     identical pattern on the LLM side. Raises on failure; the caller (service.py)
     decides how that's logged, so a bad channel never blocks the others."""
 
-    def __call__(self, listing: Listing, score: Score) -> None: ...
+    def __call__(self, listing: Listing, score: Score, config: AppSettings) -> None: ...
 
 
 def compose_message(listing: Listing, score: Score) -> str:
