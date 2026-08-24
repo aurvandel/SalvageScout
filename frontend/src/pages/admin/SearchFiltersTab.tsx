@@ -14,6 +14,7 @@ const emptyForm = {
   radius_miles: '',
   days_listed: '',
   condition: '',
+  results_limit: '100',
 }
 
 export default function SearchFiltersTab() {
@@ -51,6 +52,7 @@ export default function SearchFiltersTab() {
       radius_miles: sf.radius_miles?.toString() || '',
       days_listed: sf.days_listed?.toString() || '',
       condition: sf.condition || '',
+      results_limit: sf.results_limit?.toString() || '100',
     })
   }
 
@@ -72,6 +74,7 @@ export default function SearchFiltersTab() {
       radius_miles: form.search_mode === 'location' && form.radius_miles ? parseInt(form.radius_miles) : null,
       days_listed: form.search_mode === 'location' && form.days_listed ? parseInt(form.days_listed) : null,
       condition: form.search_mode === 'location' && form.condition ? form.condition : null,
+      results_limit: parseInt(form.results_limit) || 100,
     }
   }
 
@@ -129,6 +132,7 @@ export default function SearchFiltersTab() {
               <span className="filter-detail">
                 {sf.search_mode === 'url' ? sf.search_url : `${sf.location}${sf.query ? ` · ${sf.query}` : ''}`}
               </span>
+              <span className="results-limit-badge">↓ {sf.results_limit}</span>
             </div>
             <div className="filter-row-actions">
               <label className="inline-toggle">
@@ -212,6 +216,19 @@ export default function SearchFiltersTab() {
             </div>
           </>
         )}
+
+        <div className="config-item">
+          <label htmlFor="sf-results-limit">Results Limit (per scrape)</label>
+          <input
+            id="sf-results-limit"
+            type="number"
+            min="10"
+            max="500"
+            value={form.results_limit}
+            onChange={(e) => setForm(prev => ({ ...prev, results_limit: e.target.value }))}
+          />
+          <p className="help-text">How many listings to fetch from Marketplace (affects Apify costs)</p>
+        </div>
 
         <div className="config-item">
           <label>

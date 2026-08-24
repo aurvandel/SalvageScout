@@ -107,6 +107,7 @@ export interface SearchFilterOut {
   radius_miles: number | null
   days_listed: number | null
   condition: string | null
+  results_limit: number
 }
 
 export interface CriteriaProfileOut {

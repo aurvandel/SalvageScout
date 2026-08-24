@@ -486,6 +486,14 @@
   text-transform: uppercase;
 }
 
+.results-limit-badge {
+  background: #fff3cd;
+  color: #856404;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+}
+
 .filter-detail {
   color: #666;
   font-size: 0.85rem;

@@ -73,7 +73,7 @@ def _run_pipeline_background(filter_ids: list[int]):
         search_filters = db.query(SearchFilter).filter(SearchFilter.id.in_(filter_ids)).all()
         for search_filter in search_filters:
             try:
-                run_pipeline_for_filter(db, search_filter, results_limit=100)
+                run_pipeline_for_filter(db, search_filter, results_limit=search_filter.results_limit)
             except Exception as e:
                 error_msg = f"Filter '{search_filter.name}': {str(e)}"
                 logger.exception("Pipeline run failed for filter_id=%s: %s", search_filter.id, error_msg)
