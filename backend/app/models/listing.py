@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, Numeric, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -39,7 +40,7 @@ class Listing(Base):
     model: Mapped[str | None] = mapped_column(String)
     mileage: Mapped[int | None] = mapped_column(Integer)
 
-    raw_apify_data: Mapped[dict] = mapped_column(JSON, nullable=False)
+    raw_apify_data: Mapped[dict] = mapped_column(JSONB, nullable=False)
 
     first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_seen_at: Mapped[datetime] = mapped_column(
