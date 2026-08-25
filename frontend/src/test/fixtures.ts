@@ -43,6 +43,8 @@ export function makeListing(overrides: Partial<ListingOut> = {}): ListingOut {
     is_deleted: false,
     deleted_at: null,
     location_text: 'Portland, OR',
+    latitude: 45.5152,
+    longitude: -122.6784,
     year: 2015,
     make: 'Honda',
     model: 'Civic',
