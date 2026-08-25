@@ -1,59 +1,17 @@
+import json
+import logging
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+import anthropic
+import google.generativeai as genai
+import openai
+
 from app.models import SearchFilter
-from app.scraper.parser import parse_year_make_model
+from app.settings_service import get_app_settings
+from sqlalchemy.orm import Session
 
-# Vehicle types to exclude based on keywords in title/description
-_EXCLUSION_KEYWORDS = {
-    "bike",
-    "bicycle",
-    "motorcycle",
-    "scooter",
-    "moped",
-    "boat",
-    "canoe",
-    "kayak",
-    "jetski",
-    "jet-ski",
-    "jet ski",
-    "atv",
-    "all-terrain",
-    "quad",
-    "trailer",
-    "camper",
-    "rv",
-    "motorhome",
-    "mower",
-    "tractor",
-    "lawnmower",
-}
-
-# Vehicle categories that match each query type
-_VEHICLE_CATEGORIES = {
-    "car": {
-        "car",
-        "automobile",
-        "sedan",
-        "suv",
-        "crossover",
-        "truck",
-        "pickup",
-        "van",
-        "minivan",
-        "wagon",
-        "hatchback",
-        "coupe",
-        "convertible",
-        "sports car",
-    },
-    "truck": {"truck", "pickup"},
-    "suv": {"suv", "crossover"},
-    "sedan": {"sedan"},
-    "van": {"van", "minivan"},
-    "motorcycle": {"motorcycle", "bike", "scooter"},
-    "boat": {"boat", "sailboat", "motorboat"},
-}
+logger = logging.getLogger(__name__)
 
 
 def resolve_query(search_filter: SearchFilter) -> str | None:
@@ -67,62 +25,150 @@ def resolve_query(search_filter: SearchFilter) -> str | None:
         query_params = parse_qs(parsed_url.query)
         query_list = query_params.get("query")
         if query_list:
-            return query_list[0].lower().strip()
+            return query_list[0].strip()
 
     return None
 
 
-def _contains_exclusion_keyword(text: str) -> bool:
-    """Check if text contains any exclusion keywords (bikes, boats, etc)."""
-    text_lower = text.lower()
-    for keyword in _EXCLUSION_KEYWORDS:
-        if keyword in text_lower:
-            return True
-    return False
+def _batch_filter_with_llm(
+    titles: list[str],
+    query: str,
+    provider: str,
+    model: str,
+    api_key: str,
+) -> list[bool]:
+    """Use LLM to filter titles against query. Returns list of bools (True = keep).
+    On any error, fails open (returns True for all to preserve results)."""
+    if not titles:
+        return []
+
+    prompt = f"""You are filtering search results. Given a search query, determine if each listing title is relevant.
+Search query: "{query}"
+
+For each title, respond with a JSON object indicating if it matches the query intent.
+IMPORTANT: Only reject if the listing is clearly NOT what the user is searching for.
+If uncertain, KEEP the result.
+
+Titles to filter:
+{json.dumps([(i, title) for i, title in enumerate(titles)])}
+
+Respond with a JSON array of objects: [{{"index": 0, "keep": true}}, {{"index": 1, "keep": false}}, ...]
+Only include the index and keep fields. Keep all indices 0 to {len(titles)-1}."""
+
+    try:
+        if provider == "anthropic":
+            client = anthropic.Anthropic(api_key=api_key)
+            response = client.messages.create(
+                model=model,
+                max_tokens=1024,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            text = response.content[0].text
+        elif provider == "openai":
+            client = openai.OpenAI(api_key=api_key)
+            response = client.chat.completions.create(
+                model=model,
+                max_tokens=1024,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            text = response.choices[0].message.content
+        elif provider == "gemini":
+            genai.configure(api_key=api_key)
+            model_obj = genai.GenerativeModel(model)
+            response = model_obj.generate_content(prompt)
+            text = response.text
+        else:
+            logger.warning(f"Unknown LLM provider: {provider}, keeping all results")
+            return [True] * len(titles)
+
+        # Parse the JSON response
+        # Extract JSON array from the response (may contain extra text)
+        json_start = text.find("[")
+        json_end = text.rfind("]") + 1
+        if json_start == -1 or json_end == 0:
+            logger.warning("No JSON array in LLM response, keeping all results")
+            return [True] * len(titles)
+
+        json_text = text[json_start:json_end]
+        verdicts = json.loads(json_text)
+
+        # Validate response: check we got all indices and build result array
+        if not isinstance(verdicts, list):
+            logger.warning("LLM response is not a JSON array, keeping all results")
+            return [True] * len(titles)
+
+        result = [True] * len(titles)  # Default to keeping everything
+        for verdict in verdicts:
+            if isinstance(verdict, dict) and "index" in verdict and "keep" in verdict:
+                idx = verdict["index"]
+                if 0 <= idx < len(titles):
+                    result[idx] = verdict["keep"]
+
+        return result
+
+    except (json.JSONDecodeError, KeyError, IndexError) as e:
+        logger.warning(f"Error parsing LLM response: {e}, keeping all results")
+        return [True] * len(titles)
+    except Exception as e:
+        logger.warning(f"LLM filter error: {e}, keeping all results (fail open)")
+        return [True] * len(titles)
 
 
-def _matches_query_category(title: str, query: str) -> bool:
-    """Check if listing title semantically matches the query category.
-    Returns True if the title appears to be the vehicle type the user is looking for."""
-    title_lower = title.lower()
-    query_lower = query.lower()
-
-    # Get the category keywords for this query
-    category = _VEHICLE_CATEGORIES.get(query_lower)
-    if not category:
-        # Unknown query type — don't filter (user specified unusual query)
-        return True
-
-    # Check if any category keyword appears in the title
-    for keyword in category:
-        if keyword in title_lower:
-            return True
-
-    # Fallback: if title parses as a vehicle (year + make), and query is "car",
-    # allow it (e.g., "2003 Ford Crown Victoria" has no explicit category but is a car)
-    year, make, model = parse_year_make_model(title)
-    if year and make and query_lower == "car":
-        return True
-
-    return False
-
-
-def matches_query(raw_item: dict[str, Any], search_filter: SearchFilter) -> bool:
-    """Determine if a raw listing matches the search filter's query.
-    If no query is specified, return True (pass everything through).
-    Returns True if the listing should be kept."""
+def filter_listings_by_query(
+    db: Session, raw_items: list[dict[str, Any]], search_filter: SearchFilter
+) -> list[dict[str, Any]]:
+    """Filter raw listings to match search query using LLM.
+    Returns filtered list of items. If no query or LLM error, returns all items."""
     query = resolve_query(search_filter)
     if not query:
-        # No query specified — keep the listing
-        return True
+        return raw_items
 
-    title = (raw_item.get("listingTitle") or "").strip()
-    if not title:
-        return True
+    titles = [
+        (raw.get("listingTitle") or "").strip()
+        for raw in raw_items
+    ]
 
-    # Reject if title contains exclusion keywords (bikes, boats, etc)
-    if _contains_exclusion_keyword(title):
-        return False
+    if not titles or not any(titles):
+        return raw_items
 
-    # Accept if title matches the query's vehicle category
-    return _matches_query_category(title, query)
+    config = get_app_settings(db)
+    api_key = None
+    provider = config.llm_provider or "anthropic"
+    model = config.llm_model
+
+    if provider == "anthropic":
+        from app.settings_service import get_api_key_for_provider
+        api_key = get_api_key_for_provider(config, "anthropic")
+        if not model:
+            model = "claude-haiku-4-5"
+    elif provider == "openai":
+        from app.settings_service import get_api_key_for_provider
+        api_key = get_api_key_for_provider(config, "openai")
+        if not model:
+            model = "gpt-4o-mini"
+    elif provider == "gemini":
+        from app.settings_service import get_api_key_for_provider
+        api_key = get_api_key_for_provider(config, "gemini")
+        if not model:
+            model = "gemini-2.0-flash"
+    else:
+        logger.warning(f"Unknown LLM provider: {provider}, keeping all results")
+        return raw_items
+
+    if not api_key:
+        logger.warning(f"No API key for {provider}, keeping all results")
+        return raw_items
+
+    # Get verdicts from LLM
+    verdicts = _batch_filter_with_llm(titles, query, provider, model, api_key)
+
+    # Apply verdicts to filter items
+    filtered = [
+        item for item, keep in zip(raw_items, verdicts) if keep
+    ]
+
+    rejected_count = len(raw_items) - len(filtered)
+    if rejected_count > 0:
+        logger.info(f"Query filter '{query}': rejected {rejected_count}/{len(raw_items)} results")
+
+    return filtered
