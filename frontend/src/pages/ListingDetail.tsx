@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { deleteListing, fetchListing, setFavorite, setHidden } from '../api/client'
+import { deleteListing, fetchListing, markListingViewed, setFavorite, setHidden } from '../api/client'
 import type { ListingOut } from '../api/types'
 import { formatPrice, latestScore } from '../api/listingHelpers'
 import { scoreTier } from '../components/ListingCard'
@@ -15,8 +15,16 @@ export default function ListingDetail() {
     if (!id) return
     setListing(null)
     setError(null)
-    fetchListing(Number(id))
-      .then(setListing)
+    const listingId = Number(id)
+    fetchListing(listingId)
+      .then((listing) => {
+        setListing(listing)
+        if (listing.viewed_at === null) {
+          markListingViewed(listingId).catch(() => {
+            // Silent fail - don't disrupt the viewing experience
+          })
+        }
+      })
       .catch((err) => setError(err.message))
   }, [id])
 

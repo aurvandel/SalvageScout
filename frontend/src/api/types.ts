@@ -33,6 +33,7 @@ export interface ListingOut {
   is_hidden: boolean
   is_deleted: boolean
   deleted_at: string | null
+  viewed_at: string | null
   location_text: string | null
   year: number | null
   make: string | null

@@ -49,11 +49,16 @@ export default function ListingCard({
         ) : (
           <div className="listing-card-image-placeholder" />
         )}
-        {score && (
-          <span className={`score-badge score-${scoreTier(score.match_score)}`}>
-            {score.match_score}
-          </span>
-        )}
+        <div className="listing-card-badges">
+          {score && (
+            <span className={`score-badge score-${scoreTier(score.match_score)}`}>
+              {score.match_score}
+            </span>
+          )}
+          {listing.viewed_at === null && (
+            <span className="new-badge">NEW</span>
+          )}
+        </div>
         <div className="listing-card-actions">
           <button
             type="button"

@@ -50,6 +50,10 @@ export function deleteListing(id: number): Promise<ListingOut> {
   return request<ListingOut>(`/api/listings/${id}`, { method: 'DELETE' })
 }
 
+export function markListingViewed(id: number): Promise<ListingOut> {
+  return request<ListingOut>(`/api/listings/${id}/view`, { method: 'PATCH' })
+}
+
 export function fetchSchedulerConfig(): Promise<SchedulerConfigOut> {
   return request<SchedulerConfigOut>('/api/admin/scheduler-config')
 }
