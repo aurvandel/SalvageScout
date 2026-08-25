@@ -5,6 +5,7 @@
   --high: #1a7f37;
   --mid: #b45309;
   --low: #b91c1c;
+  --low-text: #7d2828;
   font-family: system-ui, -apple-system, sans-serif;
 }
 
@@ -15,6 +16,12 @@
 body {
   margin: 0;
   color: #1a1a1e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --low-text: #ff6b6b;
+  }
 }
 
 a {
@@ -86,7 +93,7 @@ a {
 }
 
 .error {
-  color: var(--low);
+  color: var(--low-text);
 }
 
 .listing-grid {
@@ -200,7 +207,7 @@ a {
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
-  color: var(--low);
+  color: var(--low-text);
 }
 
 .listing-detail {
@@ -299,7 +306,7 @@ a {
 }
 
 .dealbreakers {
-  color: var(--low);
+  color: var(--low-text);
 }
 
 .listing-detail-description {
