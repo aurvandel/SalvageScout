@@ -87,3 +87,15 @@ def delete_listing(listing_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(listing)
     return listing
+
+
+@router.patch("/{listing_id}/view", response_model=ListingOut)
+def mark_listing_viewed(listing_id: int, db: Session = Depends(get_db)):
+    listing = db.get(Listing, listing_id)
+    if listing is None:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    if listing.viewed_at is None:
+        listing.viewed_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(listing)
+    return listing

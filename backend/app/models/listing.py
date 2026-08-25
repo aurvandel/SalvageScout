@@ -60,5 +60,7 @@ class Listing(Base):
     )
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    viewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     images: Mapped[list["ListingImage"]] = relationship(back_populates="listing", cascade="all, delete-orphan")
     scores: Mapped[list["Score"]] = relationship(back_populates="listing", cascade="all, delete-orphan")

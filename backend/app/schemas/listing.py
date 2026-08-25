@@ -43,6 +43,7 @@ class ListingOut(BaseModel):
     is_hidden: bool
     is_deleted: bool
     deleted_at: datetime | None
+    viewed_at: datetime | None
     location_text: str | None
     year: int | None
     make: str | None
