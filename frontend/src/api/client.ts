@@ -4,6 +4,7 @@ import type {
   ListingView,
   SchedulerConfigOut,
   TriggerSearchResponse,
+  SearchStatusOut,
   AppSettingsOut,
   ArenaRunOut,
   SearchFilterOut,
@@ -77,6 +78,10 @@ export function triggerSearch(): Promise<TriggerSearchResponse> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   })
+}
+
+export function fetchSearchStatus(): Promise<SearchStatusOut> {
+  return request<SearchStatusOut>('/api/admin/search-status')
 }
 
 export function fetchSettings(): Promise<AppSettingsOut> {

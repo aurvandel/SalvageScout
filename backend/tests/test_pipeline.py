@@ -22,7 +22,9 @@ def _make_active_profile(db):
 
 
 def test_run_pipeline_raises_without_active_profile(db, raw_listings, mocker):
-    mocker.patch("app.pipeline.run_scrape", return_value=[])
+    from app.scraper.ingest import IngestResult
+
+    mocker.patch("app.pipeline.run_scrape", return_value=IngestResult(listings=[], new_count=0, existing_count=0))
     sf = _make_search_filter(db)
 
     with pytest.raises(ValueError, match="No criteria profile configured"):
@@ -45,6 +47,7 @@ def test_run_pipeline_scores_and_notifies_new_listings(db, raw_listings, monkeyp
     result = run_pipeline_for_filter(db, sf, results_limit=10)
 
     assert result.listings_processed == 3
+    assert result.new_listings == 3
     assert result.scores_created == 3
     assert result.notifications_sent == 3 * 2  # discord + telegram, all above threshold
     assert db.query(Score).count() == 3
@@ -90,6 +93,8 @@ def test_run_pipeline_skips_listings_already_scored_under_active_profile(db, raw
     second_result = run_pipeline_for_filter(db, sf, results_limit=10)
 
     assert first_result.scores_created == 3
+    assert first_result.new_listings == 3
     assert second_result.scores_created == 0  # already scored under this profile
     assert second_result.listings_processed == 3  # still scraped/upserted
+    assert second_result.new_listings == 0  # same fb_listing_ids, already ingested
     assert db.query(Score).count() == 3

@@ -19,6 +19,7 @@ from app.schemas.app_settings import (
 from app.pipeline import run_pipeline_for_filter
 from app.scorer.registry import get_available_providers, get_available_models, get_scorer
 from app.settings_service import get_api_key_for_provider, get_app_settings
+from app import search_status
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -27,12 +28,18 @@ class TriggerSearchResponse(BaseModel):
     message: str
 
 
-class TriggerSearchResultResponse(BaseModel):
-    message: str
+class SearchStatusOut(BaseModel):
+    status: str
+    run_id: int
+    started_at: str | None
+    finished_at: str | None
     filters_triggered: int
-    total_listings_processed: int
-    total_scores_created: int
-    total_notifications_sent: int
+    total_listings: int
+    new_listings: int
+    error_message: str | None
+
+    class Config:
+        from_attributes = True
 
 
 @router.get("/scheduler-config", response_model=SchedulerConfigOut)
@@ -68,15 +75,25 @@ def _run_pipeline_background(filter_ids: list[int]):
 
     logger = logging.getLogger(__name__)
     db = SessionLocal()
+    total_listings = 0
+    total_new = 0
+    errors: list[str] = []
 
     try:
         search_filters = db.query(SearchFilter).filter(SearchFilter.id.in_(filter_ids)).all()
         for search_filter in search_filters:
             try:
-                run_pipeline_for_filter(db, search_filter, results_limit=search_filter.results_limit)
+                result = run_pipeline_for_filter(db, search_filter, results_limit=search_filter.results_limit)
+                total_listings += result.listings_processed
+                total_new += result.new_listings
             except Exception as e:
                 error_msg = f"Filter '{search_filter.name}': {str(e)}"
                 logger.exception("Pipeline run failed for filter_id=%s: %s", search_filter.id, error_msg)
+                errors.append(error_msg)
+        search_status.mark_completed(total_listings, total_new, error_message="; ".join(errors) if errors else None)
+    except Exception as e:
+        logger.exception("Unexpected error running background search")
+        search_status.mark_error(str(e))
     finally:
         db.close()
 
@@ -88,9 +105,17 @@ def trigger_search(background_tasks: BackgroundTasks, db: Session = Depends(get_
     if not active_filters:
         return TriggerSearchResponse(message="No active search filters found")
 
+    if not search_status.try_start(len(active_filters)):
+        return TriggerSearchResponse(message="A search is already running")
+
     filter_ids = [f.id for f in active_filters]
     background_tasks.add_task(_run_pipeline_background, filter_ids)
     return TriggerSearchResponse(message=f"Search started for {len(active_filters)} filter(s)")
+
+
+@router.get("/search-status", response_model=SearchStatusOut)
+def get_search_status():
+    return search_status.get_status()
 
 
 def _settings_out(config) -> AppSettingsOut:

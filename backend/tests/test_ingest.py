@@ -16,9 +16,11 @@ def test_ingest_creates_new_listings_and_downloads_images(db, raw_listings, monk
     ])
     sf = _make_search_filter(db)
 
-    touched = ingest_listings(db, sf, raw_listings)
+    result = ingest_listings(db, sf, raw_listings)
 
-    assert len(touched) == 3
+    assert len(result.listings) == 3
+    assert result.new_count == 3
+    assert result.existing_count == 0
     assert db.query(Listing).count() == 3
 
     crown_vic = db.query(Listing).filter_by(fb_listing_id="839387795495137").one()
@@ -34,9 +36,13 @@ def test_ingest_is_idempotent_on_fb_listing_id(db, raw_listings, monkeypatch):
     monkeypatch.setattr("app.scraper.ingest.download_images", lambda fb_id, urls: [])
     sf = _make_search_filter(db)
 
-    ingest_listings(db, sf, raw_listings)
-    ingest_listings(db, sf, raw_listings)
+    first_result = ingest_listings(db, sf, raw_listings)
+    second_result = ingest_listings(db, sf, raw_listings)
 
+    assert first_result.new_count == 3
+    assert first_result.existing_count == 0
+    assert second_result.new_count == 0
+    assert second_result.existing_count == 3
     assert db.query(Listing).count() == 3
 
 

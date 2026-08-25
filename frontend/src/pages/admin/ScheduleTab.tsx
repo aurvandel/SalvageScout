@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
-import { fetchSchedulerConfig, updateSchedulerConfig, triggerSearch } from '../../api/client'
+import { fetchSchedulerConfig, updateSchedulerConfig } from '../../api/client'
 import type { SchedulerConfigOut } from '../../api/types'
+import { useSearchStatus } from '../../context/SearchStatusContext'
 
 export default function ScheduleTab() {
   const [config, setConfig] = useState<SchedulerConfigOut | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
-  const [isRunning, setIsRunning] = useState(false)
   const [runMessage, setRunMessage] = useState<string | null>(null)
   const [runError, setRunError] = useState<string | null>(null)
+  const { status, triggerSearch } = useSearchStatus()
+  const isRunning = status?.status === 'running'
 
   const [formData, setFormData] = useState({
     is_enabled: true,
@@ -73,7 +75,6 @@ export default function ScheduleTab() {
 
   async function handleRunSearch() {
     try {
-      setIsRunning(true)
       setRunError(null)
       setRunMessage(null)
       const results = await triggerSearch()
@@ -81,8 +82,6 @@ export default function ScheduleTab() {
       setTimeout(() => setRunMessage(null), 5000)
     } catch (err) {
       setRunError(err instanceof Error ? err.message : 'Failed to trigger search')
-    } finally {
-      setIsRunning(false)
     }
   }
 
@@ -149,7 +148,7 @@ export default function ScheduleTab() {
         <p className="help-text">Trigger an immediate search across all active search filters. The search runs in the background and may take several minutes.</p>
 
         <button className="run-button" onClick={handleRunSearch} disabled={isRunning}>
-          {isRunning ? 'Triggering...' : 'Run Now'}
+          {isRunning ? 'Search running…' : 'Run Now'}
         </button>
       </div>
     </>

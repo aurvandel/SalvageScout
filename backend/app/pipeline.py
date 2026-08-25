@@ -13,6 +13,7 @@ class PipelineResult:
     listings_processed: int
     scores_created: int
     notifications_sent: int
+    new_listings: int = 0
 
 
 def get_active_criteria_profile(db: Session) -> CriteriaProfile | None:
@@ -37,7 +38,8 @@ def run_pipeline_for_filter(db: Session, search_filter: SearchFilter, results_li
     if criteria_profile is None:
         raise ValueError(f"No criteria profile configured for search filter {search_filter.name!r}")
 
-    listings = run_scrape(db, search_filter, results_limit=results_limit)
+    ingest_result = run_scrape(db, search_filter, results_limit=results_limit)
+    listings = ingest_result.listings
 
     scores_created = 0
     notifications_sent = 0
@@ -59,4 +61,5 @@ def run_pipeline_for_filter(db: Session, search_filter: SearchFilter, results_li
         listings_processed=len(listings),
         scores_created=scores_created,
         notifications_sent=notifications_sent,
+        new_listings=ingest_result.new_count,
     )

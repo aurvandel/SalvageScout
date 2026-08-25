@@ -29,10 +29,15 @@ def test_run_pipeline_success(db, client, mocker):
 
     mocker.patch(
         "app.api.pipeline.run_pipeline_for_filter",
-        return_value=PipelineResult(listings_processed=3, scores_created=2, notifications_sent=1),
+        return_value=PipelineResult(listings_processed=3, scores_created=2, notifications_sent=1, new_listings=1),
     )
 
     response = client.post(f"/api/pipeline/run/{sf.id}", params={"results_limit": 5})
 
     assert response.status_code == 200
-    assert response.json() == {"listings_processed": 3, "scores_created": 2, "notifications_sent": 1}
+    assert response.json() == {
+        "listings_processed": 3,
+        "scores_created": 2,
+        "notifications_sent": 1,
+        "new_listings": 1,
+    }

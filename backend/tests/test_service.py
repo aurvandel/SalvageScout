@@ -12,9 +12,10 @@ def test_run_scrape_fetches_and_ingests(db, raw_listings, mocker, monkeypatch):
     db.commit()
     db.refresh(sf)
 
-    touched = service.run_scrape(db, sf, results_limit=10)
+    result = service.run_scrape(db, sf, results_limit=10)
 
-    assert len(touched) == 3
+    assert len(result.listings) == 3
+    assert result.new_count == 3
     assert db.query(Listing).count() == 3
 
     config = get_app_settings(db)
