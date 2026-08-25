@@ -35,6 +35,8 @@ export interface ListingOut {
   deleted_at: string | null
   viewed_at: string | null
   location_text: string | null
+  latitude: number | null
+  longitude: number | null
   year: number | null
   make: string | null
   model: string | null

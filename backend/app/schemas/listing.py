@@ -45,6 +45,8 @@ class ListingOut(BaseModel):
     deleted_at: datetime | None
     viewed_at: datetime | None
     location_text: str | None
+    latitude: float | None
+    longitude: float | None
     year: int | None
     make: str | None
     model: str | None
