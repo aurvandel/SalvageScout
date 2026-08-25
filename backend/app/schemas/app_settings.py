@@ -6,7 +6,7 @@ def mask_secret(secret: str | None) -> str | None:
         return None
     if len(secret) <= 4:
         return "*" * len(secret)
-    return "*" * (len(secret) - 4) + secret[-4:]
+    return "****" + secret[-4:]
 
 
 class LLMSettingsOut(BaseModel):
