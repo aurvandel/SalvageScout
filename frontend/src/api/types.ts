@@ -110,12 +110,15 @@ export interface SearchFilterOut {
   results_limit: number
 }
 
-export interface CriteriaProfileOut {
-  id: number
+export interface CriteriaProfileIn {
   name: string
   prompt_text: string
-  weights: Record<string, unknown>
-  is_active: boolean
+  weights?: Record<string, unknown>
+  is_active?: boolean
+}
+
+export interface CriteriaProfileOut extends CriteriaProfileIn {
+  id: number
   version: number
   created_at: string
 }

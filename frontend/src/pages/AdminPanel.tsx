@@ -5,12 +5,14 @@ import NotificationsTab from './admin/NotificationsTab'
 import SearchFiltersTab from './admin/SearchFiltersTab'
 import ScheduleTab from './admin/ScheduleTab'
 import ArenaTab from './admin/ArenaTab'
+import PromptsTab from './admin/PromptsTab'
 import './AdminPanel.css'
 
 const TABS = [
   { id: 'llm', label: 'LLM' },
   { id: 'apify', label: 'Apify' },
   { id: 'notifications', label: 'Notifications' },
+  { id: 'prompts', label: 'Prompts' },
   { id: 'search', label: 'Search Filters' },
   { id: 'schedule', label: 'Schedule' },
   { id: 'arena', label: 'Arena' },
@@ -41,6 +43,7 @@ export default function AdminPanel() {
         {activeTab === 'llm' && <LLMTab />}
         {activeTab === 'apify' && <ApifyTab />}
         {activeTab === 'notifications' && <NotificationsTab />}
+        {activeTab === 'prompts' && <PromptsTab />}
         {activeTab === 'search' && <SearchFiltersTab />}
         {activeTab === 'schedule' && <ScheduleTab />}
         {activeTab === 'arena' && <ArenaTab />}

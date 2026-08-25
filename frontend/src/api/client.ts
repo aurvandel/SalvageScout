@@ -7,6 +7,7 @@ import type {
   AppSettingsOut,
   ArenaRunOut,
   SearchFilterOut,
+  CriteriaProfileIn,
   CriteriaProfileOut,
 } from './types'
 
@@ -145,6 +146,21 @@ export async function deleteSearchFilter(id: number): Promise<void> {
 
 export function fetchCriteriaProfiles(): Promise<CriteriaProfileOut[]> {
   return request<CriteriaProfileOut[]>('/api/criteria-profiles')
+}
+
+export function createCriteriaProfile(payload: CriteriaProfileIn): Promise<CriteriaProfileOut> {
+  return request<CriteriaProfileOut>('/api/criteria-profiles', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export function activateCriteriaProfile(profileId: number): Promise<CriteriaProfileOut> {
+  return request<CriteriaProfileOut>(`/api/criteria-profiles/${profileId}/activate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  })
 }
 
 export async function runArenaTest(params: {
