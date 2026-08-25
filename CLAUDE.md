@@ -92,15 +92,6 @@ npm run lint         # Run linter
 - Tests for API endpoints and services
 - Run with: `pytest` (from backend directory)
 
-## Key Files & Patterns
-
-- **Database Models**: `/backend/app/models/`
-- **API Routes**: `/backend/app/api/`
-- **Scoring Logic**: `/backend/app/scorer/`
-- **Scraper**: `/backend/app/scraper/`
-- **Frontend Pages**: `/frontend/src/pages/`
-- **Migrations**: `/backend/alembic/versions/`
-
 ## Known Constraints
 
 - Apify costs ~$10-20/month for production volume
