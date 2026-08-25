@@ -62,10 +62,6 @@ export interface SchedulerConfigOut {
 
 export interface TriggerSearchResponse {
   message: string
-  filters_triggered: number
-  total_listings_processed: number
-  total_scores_created: number
-  total_notifications_sent: number
 }
 
 export interface LLMSettingsOut {
@@ -111,6 +107,7 @@ export interface SearchFilterOut {
   radius_miles: number | null
   days_listed: number | null
   condition: string | null
+  results_limit: number
 }
 
 export interface CriteriaProfileOut {

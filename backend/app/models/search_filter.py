@@ -26,3 +26,4 @@ class SearchFilter(Base):
     radius_miles: Mapped[int | None] = mapped_column(Integer, nullable=True)
     days_listed: Mapped[int | None] = mapped_column(Integer, nullable=True)
     condition: Mapped[str | None] = mapped_column(String, nullable=True)
+    results_limit: Mapped[int] = mapped_column(Integer, nullable=False, default=100)

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchSchedulerConfig, updateSchedulerConfig, triggerSearch } from '../../api/client'
-import type { SchedulerConfigOut, TriggerSearchResponse } from '../../api/types'
+import type { SchedulerConfigOut } from '../../api/types'
 
 export default function ScheduleTab() {
   const [config, setConfig] = useState<SchedulerConfigOut | null>(null)
@@ -8,7 +8,7 @@ export default function ScheduleTab() {
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [isRunning, setIsRunning] = useState(false)
-  const [runResults, setRunResults] = useState<TriggerSearchResponse | null>(null)
+  const [runMessage, setRunMessage] = useState<string | null>(null)
   const [runError, setRunError] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
@@ -75,8 +75,10 @@ export default function ScheduleTab() {
     try {
       setIsRunning(true)
       setRunError(null)
+      setRunMessage(null)
       const results = await triggerSearch()
-      setRunResults(results)
+      setRunMessage(results.message)
+      setTimeout(() => setRunMessage(null), 5000)
     } catch (err) {
       setRunError(err instanceof Error ? err.message : 'Failed to trigger search')
     } finally {
@@ -142,38 +144,13 @@ export default function ScheduleTab() {
         <h2>Manual Search Trigger</h2>
 
         {runError && <div className="error-message">{runError}</div>}
+        {runMessage && <div className="success-message">✓ {runMessage}</div>}
 
-        <p className="help-text">Trigger an immediate search across all active search filters.</p>
+        <p className="help-text">Trigger an immediate search across all active search filters. The search runs in the background and may take several minutes.</p>
 
         <button className="run-button" onClick={handleRunSearch} disabled={isRunning}>
-          {isRunning ? 'Running...' : 'Run Now'}
+          {isRunning ? 'Triggering...' : 'Run Now'}
         </button>
-
-        {runResults && (
-          <div className="run-results">
-            <div className="results-header">
-              <strong>✓ {runResults.message}</strong>
-            </div>
-            <div className="results-grid">
-              <div className="result-item">
-                <div className="result-label">Filters Triggered</div>
-                <div className="result-value">{runResults.filters_triggered}</div>
-              </div>
-              <div className="result-item">
-                <div className="result-label">Listings Processed</div>
-                <div className="result-value">{runResults.total_listings_processed}</div>
-              </div>
-              <div className="result-item">
-                <div className="result-label">Scores Created</div>
-                <div className="result-value">{runResults.total_scores_created}</div>
-              </div>
-              <div className="result-item">
-                <div className="result-label">Notifications Sent</div>
-                <div className="result-value">{runResults.total_notifications_sent}</div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </>
   )

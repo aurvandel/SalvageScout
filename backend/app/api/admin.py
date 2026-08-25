@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -24,6 +24,10 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 
 
 class TriggerSearchResponse(BaseModel):
+    message: str
+
+
+class TriggerSearchResultResponse(BaseModel):
     message: str
     filters_triggered: int
     total_listings_processed: int
@@ -57,51 +61,36 @@ def update_scheduler_config(payload: SchedulerConfigIn, db: Session = Depends(ge
     return config
 
 
-@router.post("/trigger-search", response_model=TriggerSearchResponse)
-def trigger_search(db: Session = Depends(get_db)):
+def _run_pipeline_background(filter_ids: list[int]):
     import logging
-    logger = logging.getLogger(__name__)
+    from app.db import SessionLocal
+    from app.models import SearchFilter
 
+    logger = logging.getLogger(__name__)
+    db = SessionLocal()
+
+    try:
+        search_filters = db.query(SearchFilter).filter(SearchFilter.id.in_(filter_ids)).all()
+        for search_filter in search_filters:
+            try:
+                run_pipeline_for_filter(db, search_filter, results_limit=search_filter.results_limit)
+            except Exception as e:
+                error_msg = f"Filter '{search_filter.name}': {str(e)}"
+                logger.exception("Pipeline run failed for filter_id=%s: %s", search_filter.id, error_msg)
+    finally:
+        db.close()
+
+
+@router.post("/trigger-search", response_model=TriggerSearchResponse, status_code=202)
+def trigger_search(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     active_filters = db.query(SearchFilter).filter_by(is_active=True).all()
 
     if not active_filters:
-        return TriggerSearchResponse(
-            message="No active search filters found",
-            filters_triggered=0,
-            total_listings_processed=0,
-            total_scores_created=0,
-            total_notifications_sent=0,
-        )
+        return TriggerSearchResponse(message="No active search filters found")
 
-    total_listings = 0
-    total_scores = 0
-    total_notifications = 0
-    errors = []
-    successful_filters = 0
-
-    for search_filter in active_filters:
-        try:
-            result = run_pipeline_for_filter(db, search_filter, results_limit=20)
-            total_listings += result.listings_processed
-            total_scores += result.scores_created
-            total_notifications += result.notifications_sent
-            successful_filters += 1
-        except Exception as e:
-            error_msg = f"Filter '{search_filter.name}': {str(e)}"
-            logger.exception("Pipeline run failed for filter_id=%s: %s", search_filter.id, error_msg)
-            errors.append(error_msg)
-
-    message = f"Triggered {successful_filters}/{len(active_filters)} filters"
-    if errors:
-        message += f" ({len(errors)} failed)"
-
-    return TriggerSearchResponse(
-        message=message,
-        filters_triggered=successful_filters,
-        total_listings_processed=total_listings,
-        total_scores_created=total_scores,
-        total_notifications_sent=total_notifications,
-    )
+    filter_ids = [f.id for f in active_filters]
+    background_tasks.add_task(_run_pipeline_background, filter_ids)
+    return TriggerSearchResponse(message=f"Search started for {len(active_filters)} filter(s)")
 
 
 def _settings_out(config) -> AppSettingsOut:

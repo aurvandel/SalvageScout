@@ -18,6 +18,7 @@ class SearchFilterIn(BaseModel):
     radius_miles: int | None = None
     days_listed: int | None = None
     condition: str | None = None
+    results_limit: int = 100
 
     @model_validator(mode="after")
     def _check_mode_requirements(self):
