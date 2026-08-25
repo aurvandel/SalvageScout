@@ -71,7 +71,6 @@ describe('ScheduleTab', () => {
   })
 
   it('toggling enabled or changing the time does not save automatically', async () => {
-    const user = userEvent.setup()
     mockedFetchSchedulerConfig.mockResolvedValue(makeConfig())
 
     render(<ScheduleTab />)
