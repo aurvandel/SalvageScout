@@ -83,8 +83,6 @@ export default function PromptsTab() {
     }
   }
 
-  const activeProfile = profiles.find(p => p.is_active)
-
   return (
     <div className="admin-section">
       <h2>Scoring Prompts</h2>

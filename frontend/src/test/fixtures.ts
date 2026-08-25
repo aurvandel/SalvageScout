@@ -50,6 +50,7 @@ export function makeListing(overrides: Partial<ListingOut> = {}): ListingOut {
     posted_at: '2026-08-01T10:00:00Z',
     first_seen_at: '2026-08-01T10:05:00Z',
     last_seen_at: '2026-08-02T10:05:00Z',
+    viewed_at: null,
     images: [makeImage()],
     scores: [makeScore()],
     ...overrides,
