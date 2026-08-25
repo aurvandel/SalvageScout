@@ -49,8 +49,18 @@ const mockLLMSettings = {
 
 const mockSettings = {
   llm: mockLLMSettings,
-  apify: {},
-  notifications: {},
+  apify: {
+    actor_id: 'actor-1',
+    apify_token_masked: null,
+  },
+  notifications: {
+    discord_enabled: false,
+    discord_webhook_url_masked: null,
+    telegram_enabled: false,
+    telegram_bot_token_masked: null,
+    telegram_chat_id: null,
+    notification_score_threshold: 70,
+  },
 }
 
 const mockArenaResult = {

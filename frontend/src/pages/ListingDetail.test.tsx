@@ -11,7 +11,8 @@ describe('ListingDetail',()=>{
   const mockSetFavorite=vi.mocked(client.setFavorite)
   const mockSetHidden=vi.mocked(client.setHidden)
   const mockDeleteListing=vi.mocked(client.deleteListing)
-  let alertSpy,confirmSpy
+  let alertSpy: any
+  let confirmSpy: any
   beforeEach(()=>{
     vi.clearAllMocks()
     alertSpy=vi.spyOn(window,'alert').mockImplementation(()=>{})
@@ -133,7 +134,7 @@ describe('ListingDetail',()=>{
     it('toggle',async()=>{
       const listing=makeListing({id:42,is_favorite:false})
       mockFetchListing.mockResolvedValue(listing)
-      mockSetFavorite.mockResolvedValue(undefined)
+      mockSetFavorite.mockResolvedValue(listing)
       const user=userEvent.setup()
       renderWithRouter(<ListingDetail />,{route:'/listings/42',path:'/listings/:id'})
       await waitFor(()=>{expect(screen.getByRole('button',{name:/Favorite/})).toBeInTheDocument()})
@@ -155,7 +156,7 @@ describe('ListingDetail',()=>{
     it('toggle',async()=>{
       const listing=makeListing({id:77,is_hidden:false})
       mockFetchListing.mockResolvedValue(listing)
-      mockSetHidden.mockResolvedValue(undefined)
+      mockSetHidden.mockResolvedValue(listing)
       const user=userEvent.setup()
       renderWithRouter(<ListingDetail />,{route:'/listings/77',path:'/listings/:id'})
       await waitFor(()=>{expect(screen.getByRole('button',{name:/Hide/})).toBeInTheDocument()})
@@ -187,7 +188,7 @@ describe('ListingDetail',()=>{
     it('confirm',async()=>{
       const listing=makeListing({id:88})
       mockFetchListing.mockResolvedValue(listing)
-      mockDeleteListing.mockResolvedValue(undefined)
+      mockDeleteListing.mockResolvedValue(listing)
       confirmSpy.mockReturnValue(true)
       const user=userEvent.setup()
       renderWithRouter(<ListingDetail />,{route:'/listings/88',path:'/listings/:id'})
