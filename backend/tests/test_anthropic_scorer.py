@@ -24,12 +24,16 @@ def _criteria_profile():
 def test_score_listing_calls_parse_with_expected_args(mocker):
     expected = ScoreResult(match_score=80, summary="Solid budget car.", pros=["Cheap"], cons=["High mileage"], dealbreaker_flags=[])
     mock_client = MagicMock()
-    mock_client.messages.parse.return_value = MagicMock(parsed_output=expected)
+    mock_client.messages.parse.return_value = MagicMock(
+        parsed_output=expected, usage=MagicMock(input_tokens=200, output_tokens=60)
+    )
     mocker.patch("app.scorer.anthropic_scorer.anthropic.Anthropic", return_value=mock_client)
 
-    result = score_listing(_listing(), _criteria_profile(), api_key="fake-anthropic-key")
+    result, usage = score_listing(_listing(), _criteria_profile(), api_key="fake-anthropic-key")
 
     assert result == expected
+    assert usage.input_tokens == 200
+    assert usage.output_tokens == 60
     call_kwargs = mock_client.messages.parse.call_args.kwargs
     assert call_kwargs["model"] == DEFAULT_MODEL
     assert call_kwargs["system"] == "Score this car for a budget beater search."
@@ -40,10 +44,12 @@ def test_score_listing_calls_parse_with_expected_args(mocker):
 def test_score_listing_with_custom_model(mocker):
     expected = ScoreResult(match_score=75, summary="Good deal.", pros=["Reliable"], cons=["Expensive"], dealbreaker_flags=[])
     mock_client = MagicMock()
-    mock_client.messages.parse.return_value = MagicMock(parsed_output=expected)
+    mock_client.messages.parse.return_value = MagicMock(
+        parsed_output=expected, usage=MagicMock(input_tokens=180, output_tokens=55)
+    )
     mocker.patch("app.scorer.anthropic_scorer.anthropic.Anthropic", return_value=mock_client)
 
-    result = score_listing(_listing(), _criteria_profile(), model="claude-opus-4-1", api_key="fake-anthropic-key")
+    result, _usage = score_listing(_listing(), _criteria_profile(), model="claude-opus-4-1", api_key="fake-anthropic-key")
 
     assert result == expected
     call_kwargs = mock_client.messages.parse.call_args.kwargs

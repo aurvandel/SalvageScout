@@ -1,9 +1,12 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.db import get_db
-from app.models import SchedulerConfig, SearchFilter, ArenaRun, Listing, CriteriaProfile
+from app.models import SchedulerConfig, SearchFilter, ArenaRun, Listing, CriteriaProfile, Score
 from app.schemas.scheduler_config import SchedulerConfigIn, SchedulerConfigOut
 from app.schemas.llm_config import ArenaRunIn, ArenaRunOut, ArenaScoreResult
 from app.schemas.app_settings import (
@@ -16,8 +19,11 @@ from app.schemas.app_settings import (
     NotificationSettingsOut,
     mask_secret,
 )
+from app.schemas.usage import ApifyUsageOut, LLMProviderUsageOut, UsageOut
 from app.pipeline import run_pipeline_for_filter
+from app.scorer.pricing import estimate_cost_usd
 from app.scorer.registry import get_available_providers, get_available_models, get_scorer
+from app.scraper.apify_client import get_account_usage
 from app.settings_service import get_api_key_for_provider, get_app_settings
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -231,7 +237,7 @@ def run_arena(payload: ArenaRunIn, db: Session = Depends(get_db)):
         try:
             scorer_fn = get_scorer(provider)
             api_key = get_api_key_for_provider(config, provider)
-            score_result = scorer_fn(listing, criteria_profile, model, api_key)
+            score_result, _usage = scorer_fn(listing, criteria_profile, model, api_key)
             results.append(
                 ArenaScoreResult(
                     provider=provider,
@@ -268,4 +274,61 @@ def run_arena(payload: ArenaRunIn, db: Session = Depends(get_db)):
         models=arena_run.models,
         results=results,
         created_at=arena_run.created_at.isoformat(),
+    )
+
+
+def _aggregate_llm_usage(query) -> list[LLMProviderUsageOut]:
+    """Older Score rows predate token tracking and have NULL input/output_tokens.
+    priced_count (COUNT skips NULLs) tracks how many of scored_count actually fed
+    the cost estimate, so the UI can say "priced N of M" instead of implying the
+    dollar figure covers every scored listing."""
+    rows = (
+        query.with_entities(
+            Score.model_used,
+            func.count(Score.id),
+            func.count(Score.input_tokens),
+            func.coalesce(func.sum(Score.input_tokens), 0),
+            func.coalesce(func.sum(Score.output_tokens), 0),
+        )
+        .group_by(Score.model_used)
+        .all()
+    )
+    results = []
+    for model_used, scored_count, priced_count, input_tokens, output_tokens in rows:
+        provider, _, model = model_used.partition("/")
+        results.append(
+            LLMProviderUsageOut(
+                provider=provider,
+                model=model,
+                scored_count=scored_count,
+                priced_count=priced_count,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                estimated_cost_usd=estimate_cost_usd(model_used, input_tokens, output_tokens) if priced_count else None,
+            )
+        )
+    return sorted(results, key=lambda r: (r.provider, r.model))
+
+
+@router.get("/usage", response_model=UsageOut)
+def get_usage(db: Session = Depends(get_db)):
+    config = get_app_settings(db)
+
+    apify_usage = ApifyUsageOut(configured=bool(config.apify_token))
+    if config.apify_token:
+        try:
+            data = get_account_usage(config.apify_token)
+            apify_usage.used_usd = data["used_usd"]
+            apify_usage.limit_usd = data["limit_usd"]
+            apify_usage.cycle_start = data["cycle_start"]
+            apify_usage.cycle_end = data["cycle_end"]
+        except Exception as e:
+            apify_usage.error = str(e)
+
+    month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    return UsageOut(
+        apify=apify_usage,
+        llm_this_month=_aggregate_llm_usage(db.query(Score).filter(Score.created_at >= month_start)),
+        llm_all_time=_aggregate_llm_usage(db.query(Score)),
     )

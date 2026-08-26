@@ -9,6 +9,7 @@ import type {
   SearchFilterOut,
   CriteriaProfileIn,
   CriteriaProfileOut,
+  UsageOut,
 } from './types'
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -167,6 +168,10 @@ export function activateCriteriaProfile(profileId: number): Promise<CriteriaProf
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   })
+}
+
+export function fetchUsage(): Promise<UsageOut> {
+  return request<UsageOut>('/api/admin/usage')
 }
 
 export async function runArenaTest(params: {

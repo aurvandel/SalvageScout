@@ -2,7 +2,7 @@ import pytest
 
 from app.models import CriteriaProfile, Score, SearchFilter
 from app.pipeline import resolve_criteria_profile, run_pipeline_for_filter
-from app.scorer.schemas import ScoreResult
+from app.scorer.schemas import ScoreResult, TokenUsage
 
 
 def _make_search_filter(db):
@@ -32,7 +32,8 @@ def test_run_pipeline_raises_without_active_profile(db, raw_listings, mocker):
 def test_run_pipeline_scores_and_notifies_new_listings(db, raw_listings, monkeypatch, mocker):
     monkeypatch.setattr("app.scraper.ingest.download_images", lambda fb_id, urls: [])
     fake_result = ScoreResult(match_score=85, summary="Good.", pros=[], cons=[], dealbreaker_flags=[])
-    mocker.patch("app.scorer.service.get_scorer", return_value=lambda l, c, m, k: fake_result)
+    fake_usage = TokenUsage(input_tokens=100, output_tokens=50)
+    mocker.patch("app.scorer.service.get_scorer", return_value=lambda l, c, m, k: (fake_result, fake_usage))
     mock_notifier = mocker.Mock()
     mocker.patch("app.notifier.service.get_notifier", return_value=mock_notifier)
 
@@ -79,7 +80,8 @@ def test_resolve_criteria_profile_falls_back_to_global_active_when_unlinked(db):
 def test_run_pipeline_skips_listings_already_scored_under_active_profile(db, raw_listings, monkeypatch, mocker):
     monkeypatch.setattr("app.scraper.ingest.download_images", lambda fb_id, urls: [])
     fake_result = ScoreResult(match_score=85, summary="Good.", pros=[], cons=[], dealbreaker_flags=[])
-    mocker.patch("app.scorer.service.get_scorer", return_value=lambda l, c, m, k: fake_result)
+    fake_usage = TokenUsage(input_tokens=100, output_tokens=50)
+    mocker.patch("app.scorer.service.get_scorer", return_value=lambda l, c, m, k: (fake_result, fake_usage))
     mocker.patch("app.notifier.service.get_notifier", return_value=mocker.Mock())
     mocker.patch("app.scraper.service.fetch_listings", return_value=raw_listings)
 

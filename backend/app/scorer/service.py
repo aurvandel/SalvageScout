@@ -15,7 +15,7 @@ def score_and_store(
     api_key = get_api_key_for_provider(config, provider)
 
     scorer_fn = get_scorer(provider)
-    result = scorer_fn(listing, criteria_profile, model, api_key)
+    result, usage = scorer_fn(listing, criteria_profile, model, api_key)
 
     score = Score(
         listing_id=listing.id,
@@ -26,6 +26,8 @@ def score_and_store(
         cons=result.cons,
         dealbreaker_flags=result.dealbreaker_flags,
         model_used=f"{provider}/{model}",
+        input_tokens=usage.input_tokens,
+        output_tokens=usage.output_tokens,
     )
     db.add(score)
     db.commit()
