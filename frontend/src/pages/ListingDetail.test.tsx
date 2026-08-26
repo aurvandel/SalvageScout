@@ -11,10 +11,12 @@ describe('ListingDetail',()=>{
   const mockSetFavorite=vi.mocked(client.setFavorite)
   const mockSetHidden=vi.mocked(client.setHidden)
   const mockDeleteListing=vi.mocked(client.deleteListing)
+  const mockMarkListingViewed=vi.mocked(client.markListingViewed)
   let alertSpy: any
   let confirmSpy: any
   beforeEach(()=>{
     vi.clearAllMocks()
+    mockMarkListingViewed.mockResolvedValue(makeListing())
     alertSpy=vi.spyOn(window,'alert').mockImplementation(()=>{})
     confirmSpy=vi.spyOn(window,'confirm').mockImplementation(()=>false)
   })
