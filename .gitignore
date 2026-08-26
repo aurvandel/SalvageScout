@@ -1,6 +1,9 @@
 # SalvageScout downloaded listing images (local dev + prod volume, not source)
 backend/data/
 
+# Claude Code feature-branch worktrees (ephemeral, each becomes its own branch/PR)
+.claude/worktrees/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
