@@ -45,6 +45,21 @@ The Docker Compose setup includes:
 - React frontend
 - Scheduler service (for periodic scraping)
 
+### Production Deployment (on-prem server)
+
+`docker-compose.prod.yml` is an override applied on top of the base file — restart policies, resource limits, and log rotation for a long-running unattended box. There's no separate prod image registry: clone the repo onto the on-prem server and build there.
+
+```bash
+# 1. Configure environment
+cp .env.example .env
+# Edit .env with your production API keys
+
+# 2. Start all services with prod overrides
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
+No auth/TLS is built into the app (single-user, LAN-only by design — see `PROJECT_CONTEXT.md`). Access control is deployment-side: don't expose ports 3000/8000/5432 past the LAN or a reverse proxy you control.
+
 ### Local Development
 
 #### Backend
