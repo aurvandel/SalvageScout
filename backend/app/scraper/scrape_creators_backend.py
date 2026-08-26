@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 import httpx
@@ -39,7 +39,11 @@ def _resolve_coordinates(db: Session, search_filter: SearchFilter, api_key: str)
     if not locations:
         raise ValueError(f"ScrapeCreators found no location match for {search_filter.location!r}")
 
-    best = locations[0]
+    # Results mix canonical cities (subtitle == "City") with neighborhood/landmark
+    # check-in pages and same-named cities in other states — e.g. querying "Austin"
+    # returns "Austin, IL" before "Austin, Texas". Prefer the first "City" match;
+    # only fall back to the raw first result if none is marked as a city.
+    best = next((loc for loc in locations if loc.get("subtitle") == "City"), locations[0])
     latitude, longitude = float(best["latitude"]), float(best["longitude"])
 
     search_filter.latitude = latitude
@@ -78,11 +82,16 @@ def _fetch_item_detail(api_key: str, listing_id: str) -> dict[str, Any] | None:
     return response.json()
 
 
-def _extract_condition(attributes: list[dict[str, Any]] | None) -> str | None:
-    """`attributes` is a loosely-documented list of {name/type, value}-shaped
-    entries covering condition/type/material — this is a best-effort scan, not
-    a confirmed schema; verify against a live response before relying on it."""
-    for attribute in attributes or []:
+def _extract_condition(detail: dict[str, Any] | None) -> str | None:
+    """The item-detail endpoint returns `condition` as a flat string (e.g.
+    "USED") directly on the response — confirmed against a live call. Fall back
+    to scanning `attributes` only for the rare response where the flat field is
+    absent but the attribute list carries it instead."""
+    if not detail:
+        return None
+    if detail.get("condition"):
+        return detail["condition"]
+    for attribute in detail.get("attributes") or []:
         label = str(attribute.get("name") or attribute.get("type") or "").lower()
         if "condition" in label:
             return attribute.get("value")
@@ -107,6 +116,13 @@ def _normalize(item: dict[str, Any], detail: dict[str, Any] | None) -> dict[str,
         photo_urls = [item["primary_photo"]["url"]]
 
     specs = parse_vehicle_specs(title, None)
+    # ScrapeCreators returns mileage as a pre-parsed {value, unit} on the detail
+    # response — confirmed live — which is more reliable than scanning the title
+    # for inline text, and is the *only* source when the title doesn't carry
+    # mileage at all (e.g. "1995 Ford F-150 · XLT Pickup 2D 6 1/2 ft").
+    detail_mileage = ((detail or {}).get("mileage") or {}).get("value")
+    if detail_mileage is not None:
+        specs["mileage"] = detail_mileage
 
     return {
         "fb_listing_id": item["id"],
@@ -116,7 +132,7 @@ def _normalize(item: dict[str, Any], detail: dict[str, Any] | None) -> dict[str,
         "price_amount": price.get("amount"),
         "currency": price.get("currency", "USD"),
         "strikethrough_price_amount": ((detail or item).get("strikethrough_price") or {}).get("amount"),
-        "condition": _extract_condition((detail or {}).get("attributes")),
+        "condition": _extract_condition(detail),
         "is_live": item.get("is_live", True),
         "is_pending": item.get("is_pending", False),
         "is_sold": item.get("is_sold", False),

@@ -4,16 +4,16 @@ Kept as its own migration, separate from 007, since it renames a populated
 NOT NULL column rather than just adding new ones — lower blast radius to
 review/roll back independently.
 
-Revision ID: 008_rename_raw_data
-Revises: 007_scraper_providers
+Revision ID: 009_rename_raw_data
+Revises: 008_scraper_providers
 Create Date: 2026-08-26 09:30:00.000000
 
 """
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '008_rename_raw_data'
-down_revision = '007_scraper_providers'
+revision = '009_rename_raw_data'
+down_revision = '008_scraper_providers'
 branch_labels = None
 depends_on = None
 

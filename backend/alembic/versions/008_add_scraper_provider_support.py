@@ -1,7 +1,7 @@
 """Add pluggable scraper provider support (Bright Data, ScrapeCreators)
 
-Revision ID: 007_scraper_providers
-Revises: 006_link_profile
+Revision ID: 008_scraper_providers
+Revises: 007_add_token_usage
 Create Date: 2026-08-26 09:00:00.000000
 
 """
@@ -9,8 +9,8 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = '007_scraper_providers'
-down_revision = '006_link_profile'
+revision = '008_scraper_providers'
+down_revision = '007_add_token_usage'
 branch_labels = None
 depends_on = None
 
