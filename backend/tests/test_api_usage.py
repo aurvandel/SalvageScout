@@ -8,7 +8,7 @@ def _seed_score(db, model_used="anthropic/claude-haiku-4-5", input_tokens=1000, 
         url=f"https://example.com/{fb_listing_id}",
         title="2014 Chevrolet Impala",
         price_amount=2500.0,
-        raw_apify_data={},
+        raw_scraper_data={},
     )
     profile = CriteriaProfile(name="default", prompt_text="Score this car.")
     db.add_all([listing, profile])

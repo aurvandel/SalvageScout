@@ -109,6 +109,19 @@ export function updateApifySettings(fields: {
   })
 }
 
+export function updateScraperSettings(fields: {
+  provider?: string
+  bright_data_api_key?: string
+  bright_data_dataset_id?: string
+  scrape_creators_api_key?: string
+}): Promise<AppSettingsOut> {
+  return request<AppSettingsOut>('/api/admin/settings/scraper', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fields),
+  })
+}
+
 export function updateNotificationSettings(fields: {
   discord_enabled?: boolean
   discord_webhook_url?: string
