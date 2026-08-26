@@ -60,6 +60,22 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 No auth/TLS is built into the app (single-user, LAN-only by design — see `PROJECT_CONTEXT.md`). Access control is deployment-side: don't expose ports 3000/8000/5432 past the LAN or a reverse proxy you control.
 
+### Reverse Proxy (Caddy, etc.)
+
+The app works behind a reverse proxy with no code changes, as long as it's put in front of the **frontend container's port 3000** — not port 8000. The frontend's nginx is the app's single entry point; it already proxies `/api/*` and `/media/*` to the backend internally, and every frontend request is a relative path, so there's no separate origin/CORS setup needed on the proxy side.
+
+Example Caddyfile, terminating TLS at Caddy and forwarding to the Docker host:
+
+```
+salvagescout.example.lan {
+	reverse_proxy 192.168.86.35:3000
+}
+```
+
+Only point the proxy at 3000. Don't add a second route for 8000 — that would bypass nginx and expose the API directly.
+
+Caveat: this assumes the proxy mounts the app at a subdomain or at the root of a path (`/`). Mounting it under a subpath (e.g. `/salvagescout/`) will break asset loading, since the frontend is built with an absolute `/` base path.
+
 ### Local Development
 
 #### Backend
