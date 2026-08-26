@@ -26,10 +26,25 @@ import httpx
 
 BASE_URL = "https://api.brightdata.com/datasets/v3/scrape"
 DATASET_ID = "gd_lvt9iwuh6fbcwmx1a"
+BALANCE_URL = "https://api.brightdata.com/customer/balance"
 
 
 def _headers(api_key: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+
+
+def get_account_usage(api_key: str) -> dict[str, Any]:
+    """Current account balance and the pending charge for the next billing
+    cycle. Raises with the response body attached (not just the status line)
+    since a permissions-scoped API key — confirmed live: a token missing the
+    right scope gets a 403 whose body names the fix ("change your token
+    permissions at brightdata.com/cp/setting/users") — would otherwise surface
+    to the caller as an opaque "403 Forbidden" with no way to act on it."""
+    response = httpx.get(BALANCE_URL, headers=_headers(api_key), timeout=10.0)
+    if response.status_code >= 400:
+        raise RuntimeError(f"Bright Data balance API returned {response.status_code}: {response.text.strip()[:200]}")
+    data = response.json()
+    return {"balance_usd": data["balance"], "pending_balance_usd": data["pending_balance"]}
 
 
 def _parse_timestamp(value: str | None) -> datetime | None:

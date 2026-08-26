@@ -1,9 +1,11 @@
+from datetime import datetime, timezone
+
 import httpx
 import pytest
 import respx
 
 from app.models import AppSettings, SearchFilter
-from app.scraper.scrape_creators_backend import fetch_listings
+from app.scraper.scrape_creators_backend import fetch_listings, get_account_usage
 
 LOCATION_RESPONSE = {
     "success": True,
@@ -261,3 +263,52 @@ def test_fetch_listings_raises_when_location_not_found(db):
     sf = _search_filter(db)
     with pytest.raises(ValueError, match="no location match"):
         fetch_listings(db, sf, 10, _config())
+
+
+@respx.mock
+def test_get_account_usage_returns_balance_and_todays_usage():
+    today = datetime.now(timezone.utc).date().isoformat()
+    respx.get("https://api.scrapecreators.com/v1/account/credit-balance").mock(
+        return_value=httpx.Response(200, json={"success": True, "creditCount": 97, "message": "You have 97 credits remaining."})
+    )
+    respx.get("https://api.scrapecreators.com/v1/account/get-daily-usage-count").mock(
+        return_value=httpx.Response(
+            200, json=[{"usage_date": f"{today}T00:00:00.000Z", "total_credits": "3", "request_count": "3"}]
+        )
+    )
+
+    result = get_account_usage("fake-key")
+
+    assert result == {"credits_remaining": 97, "credits_used_today": 3, "requests_today": 3}
+
+
+@respx.mock
+def test_get_account_usage_returns_none_for_today_when_no_matching_row():
+    respx.get("https://api.scrapecreators.com/v1/account/credit-balance").mock(
+        return_value=httpx.Response(200, json={"success": True, "creditCount": 50})
+    )
+    respx.get("https://api.scrapecreators.com/v1/account/get-daily-usage-count").mock(
+        return_value=httpx.Response(
+            200, json=[{"usage_date": "2020-01-01T00:00:00.000Z", "total_credits": "9", "request_count": "9"}]
+        )
+    )
+
+    result = get_account_usage("fake-key")
+
+    assert result == {"credits_remaining": 50, "credits_used_today": None, "requests_today": None}
+
+
+@respx.mock
+def test_get_account_usage_keeps_balance_when_daily_usage_call_fails():
+    """The balance is the primary number; a broken secondary call shouldn't
+    take it down with it."""
+    respx.get("https://api.scrapecreators.com/v1/account/credit-balance").mock(
+        return_value=httpx.Response(200, json={"success": True, "creditCount": 50})
+    )
+    respx.get("https://api.scrapecreators.com/v1/account/get-daily-usage-count").mock(
+        return_value=httpx.Response(500)
+    )
+
+    result = get_account_usage("fake-key")
+
+    assert result == {"credits_remaining": 50, "credits_used_today": None, "requests_today": None}

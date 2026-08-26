@@ -10,6 +10,21 @@ class ApifyUsageOut(BaseModel):
     error: str | None = None
 
 
+class ScrapeCreatorsUsageOut(BaseModel):
+    configured: bool
+    credits_remaining: int | None = None
+    credits_used_today: int | None = None
+    requests_today: int | None = None
+    error: str | None = None
+
+
+class BrightDataUsageOut(BaseModel):
+    configured: bool
+    balance_usd: float | None = None
+    pending_balance_usd: float | None = None
+    error: str | None = None
+
+
 class LLMProviderUsageOut(BaseModel):
     provider: str
     model: str
@@ -22,5 +37,7 @@ class LLMProviderUsageOut(BaseModel):
 
 class UsageOut(BaseModel):
     apify: ApifyUsageOut
+    scrape_creators: ScrapeCreatorsUsageOut
+    bright_data: BrightDataUsageOut
     llm_this_month: list[LLMProviderUsageOut]
     llm_all_time: list[LLMProviderUsageOut]

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 import httpx
@@ -8,6 +8,7 @@ from app.models import AppSettings, SearchFilter
 from app.scraper.parser import parse_vehicle_specs
 
 BASE_URL = "https://api.scrapecreators.com/v1/facebook/marketplace"
+ACCOUNT_BASE_URL = "https://api.scrapecreators.com/v1/account"
 MILES_TO_KM = 1.60934
 
 # SearchFilter.condition is free text shared across providers (the admin UI's
@@ -20,6 +21,36 @@ _VALID_CONDITIONS = {"new", "used_like_new", "used_good", "used_fair"}
 
 def _headers(api_key: str) -> dict[str, str]:
     return {"x-api-key": api_key}
+
+
+def get_account_usage(api_key: str) -> dict[str, Any]:
+    """Remaining prepaid credit balance, plus today's spend if that call
+    succeeds. ScrapeCreators sells credit packs rather than a monthly limit
+    like Apify, so there's no used/limit pair — just a balance. The
+    daily-usage call is best-effort: it's a secondary number, so a failure
+    there shouldn't cost the caller the (more important) balance figure."""
+    balance_response = httpx.get(f"{ACCOUNT_BASE_URL}/credit-balance", headers=_headers(api_key), timeout=10.0)
+    balance_response.raise_for_status()
+    credits_remaining = balance_response.json()["creditCount"]
+
+    credits_used_today = None
+    requests_today = None
+    try:
+        daily_response = httpx.get(f"{ACCOUNT_BASE_URL}/get-daily-usage-count", headers=_headers(api_key), timeout=10.0)
+        daily_response.raise_for_status()
+        today_str = datetime.now(timezone.utc).date().isoformat()
+        today_row = next((row for row in daily_response.json() if row["usage_date"].startswith(today_str)), None)
+        if today_row is not None:
+            credits_used_today = int(today_row["total_credits"])
+            requests_today = int(today_row["request_count"])
+    except httpx.HTTPError:
+        pass
+
+    return {
+        "credits_remaining": credits_remaining,
+        "credits_used_today": credits_used_today,
+        "requests_today": requests_today,
+    }
 
 
 def _resolve_coordinates(db: Session, search_filter: SearchFilter, api_key: str) -> tuple[float, float]:

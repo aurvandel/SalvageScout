@@ -21,11 +21,13 @@ from app.schemas.app_settings import (
     ScraperSettingsOut,
     mask_secret,
 )
-from app.schemas.usage import ApifyUsageOut, LLMProviderUsageOut, UsageOut
+from app.schemas.usage import ApifyUsageOut, BrightDataUsageOut, LLMProviderUsageOut, ScrapeCreatorsUsageOut, UsageOut
 from app.pipeline import run_pipeline_for_filter
 from app.scorer.pricing import estimate_cost_usd
 from app.scorer.registry import get_available_providers, get_available_models, get_scorer
 from app.scraper.apify_client import get_account_usage
+from app.scraper.bright_data_backend import get_account_usage as get_bright_data_usage
+from app.scraper.scrape_creators_backend import get_account_usage as get_scrape_creators_usage
 from app.scraper.registry import get_available_scraper_providers, supports_search_mode
 from app.settings_service import get_api_key_for_provider, get_app_settings
 
@@ -366,10 +368,31 @@ def get_usage(db: Session = Depends(get_db)):
         except Exception as e:
             apify_usage.error = str(e)
 
+    scrape_creators_usage = ScrapeCreatorsUsageOut(configured=bool(config.scrape_creators_api_key))
+    if config.scrape_creators_api_key:
+        try:
+            data = get_scrape_creators_usage(config.scrape_creators_api_key)
+            scrape_creators_usage.credits_remaining = data["credits_remaining"]
+            scrape_creators_usage.credits_used_today = data["credits_used_today"]
+            scrape_creators_usage.requests_today = data["requests_today"]
+        except Exception as e:
+            scrape_creators_usage.error = str(e)
+
+    bright_data_usage = BrightDataUsageOut(configured=bool(config.bright_data_api_key))
+    if config.bright_data_api_key:
+        try:
+            data = get_bright_data_usage(config.bright_data_api_key)
+            bright_data_usage.balance_usd = data["balance_usd"]
+            bright_data_usage.pending_balance_usd = data["pending_balance_usd"]
+        except Exception as e:
+            bright_data_usage.error = str(e)
+
     month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
     return UsageOut(
         apify=apify_usage,
+        scrape_creators=scrape_creators_usage,
+        bright_data=bright_data_usage,
         llm_this_month=_aggregate_llm_usage(db.query(Score).filter(Score.created_at >= month_start)),
         llm_all_time=_aggregate_llm_usage(db.query(Score)),
     )
