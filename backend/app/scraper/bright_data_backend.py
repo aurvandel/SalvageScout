@@ -46,6 +46,12 @@ def _normalize(raw: dict[str, Any]) -> dict[str, Any]:
     # discovered the listing, and this is an enrichment step layered on top of
     # discovery, not a replacement for it — overwriting it here would lose the
     # primary source's raw payload for every enriched listing.
+    #
+    # Also deliberately omits is_sold: the discovery provider (Apify/
+    # ScrapeCreators) already owns that field and defaults it to False when
+    # absent, not None — so mapping it here would just get silently clobbered
+    # back to False on the next run's re-scrape, flip-flopping a real "sold"
+    # observation back to "active" instead of sticking.
     return {
         "title": raw.get("title"),
         "description": raw.get("description") or raw.get("seller_description"),
@@ -53,7 +59,6 @@ def _normalize(raw: dict[str, Any]) -> dict[str, Any]:
         "currency": raw.get("currency"),
         "strikethrough_price_amount": initial_price if initial_price != final_price else None,
         "condition": raw.get("condition"),
-        "is_sold": raw.get("is_sold"),
         "location_text": raw.get("location"),
         "mileage": raw.get("car_miles"),
         "posted_at": _parse_timestamp(raw.get("listing_date")),

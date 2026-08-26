@@ -54,7 +54,9 @@ def test_fetch_details_normalizes_successful_items():
     assert detail["title"] == "1995 Ford F-150 · XLT Pickup 2D 6 1/2 ft"
     assert detail["price_amount"] == 6000
     assert detail["mileage"] == 250000
-    assert detail["is_sold"] is False
+    # is_sold is deliberately not mapped — the discovery provider owns it and
+    # would silently clobber it back to False on the next run otherwise.
+    assert "is_sold" not in detail
     assert detail["photo_urls"] == ["https://img.example.com/1.jpg"]
 
     request = route.calls.last.request
