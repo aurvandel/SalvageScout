@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { fetchSettings, updateScraperSettings } from '../../api/client'
-import type { ScraperSettingsOut } from '../../api/types'
+import { fetchSettings, updateApifySettings, updateScraperSettings } from '../../api/client'
+import type { ApifySettingsOut, ScraperSettingsOut } from '../../api/types'
 
 const PROVIDER_LABELS: Record<string, string> = {
   apify: 'Apify',
@@ -9,10 +9,14 @@ const PROVIDER_LABELS: Record<string, string> = {
 
 export default function ScraperTab() {
   const [scraper, setScraper] = useState<ScraperSettingsOut | null>(null)
+  const [apify, setApify] = useState<ApifySettingsOut | null>(null)
   const [provider, setProvider] = useState('')
+  const [actorId, setActorId] = useState('')
+  const [apifyToken, setApifyToken] = useState('')
   const [enrichmentEnabled, setEnrichmentEnabled] = useState(false)
   const [keys, setKeys] = useState({ bright_data_api_key: '', scrape_creators_api_key: '' })
   const [error, setError] = useState<string | null>(null)
+  const [isSavingApify, setIsSavingApify] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -25,9 +29,29 @@ export default function ScraperTab() {
       setScraper(data.scraper)
       setProvider(data.scraper.provider)
       setEnrichmentEnabled(data.scraper.bright_data_enrichment_enabled)
+      setApify(data.apify)
+      setActorId(data.apify.actor_id)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load scraper settings')
+    }
+  }
+
+  async function handleSaveApify() {
+    try {
+      setIsSavingApify(true)
+      setError(null)
+      const fields: Record<string, string> = { actor_id: actorId }
+      if (apifyToken) fields.apify_token = apifyToken
+
+      const updated = await updateApifySettings(fields)
+      setApify(updated.apify)
+      setApifyToken('')
+      alert('Apify settings updated successfully!')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update Apify settings')
+    } finally {
+      setIsSavingApify(false)
     }
   }
 
@@ -50,7 +74,7 @@ export default function ScraperTab() {
     }
   }
 
-  if (!scraper) {
+  if (!scraper || !apify) {
     return <div className="admin-section"><p>Loading...</p></div>
   }
 
@@ -76,7 +100,42 @@ export default function ScraperTab() {
             run under {PROVIDER_LABELS[provider] || provider}: {scraper.incompatible_filter_names.join(', ')}
           </div>
         )}
+      </div>
 
+      <hr className="section-divider" />
+
+      <div className="settings-form">
+        <h3>Apify</h3>
+        <div className="config-item">
+          <label htmlFor="actor-id">Actor ID</label>
+          <input
+            id="actor-id"
+            type="text"
+            value={actorId}
+            onChange={(e) => setActorId(e.target.value)}
+          />
+          <p className="help-text">The Apify actor used to scrape Facebook Marketplace listings.</p>
+        </div>
+
+        <div className="config-item">
+          <label htmlFor="apify-token">
+            Apify API Token {apify.apify_token_masked && <span className="masked-value">({apify.apify_token_masked})</span>}
+          </label>
+          <input
+            id="apify-token"
+            type="password"
+            placeholder={apify.apify_token_masked ? 'Unchanged' : 'Not set'}
+            value={apifyToken}
+            onChange={(e) => setApifyToken(e.target.value)}
+          />
+        </div>
+
+        <button className="save-button" onClick={handleSaveApify} disabled={isSavingApify}>
+          {isSavingApify ? 'Saving...' : 'Save Apify Settings'}
+        </button>
+      </div>
+
+      <div className="settings-form">
         <h3>ScrapeCreators</h3>
         <div className="config-item">
           <label htmlFor="scrape-creators-key">

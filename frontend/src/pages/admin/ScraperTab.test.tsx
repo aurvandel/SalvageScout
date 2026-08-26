@@ -5,11 +5,12 @@ import ScraperTab from "./ScraperTab"
 
 vi.mock("../../api/client", () => ({
   fetchSettings: vi.fn(),
+  updateApifySettings: vi.fn(),
   updateScraperSettings: vi.fn(),
 }))
 
 import * as clientModule from "../../api/client"
-const { fetchSettings, updateScraperSettings } = clientModule
+const { fetchSettings, updateApifySettings, updateScraperSettings } = clientModule
 
 const baseScraper = {
   provider: "apify",
@@ -18,6 +19,11 @@ const baseScraper = {
   bright_data_enrichment_enabled: false,
   scrape_creators_api_key_masked: null,
   incompatible_filter_names: [],
+}
+
+const baseApify = {
+  actor_id: "test-actor-123",
+  apify_token_masked: null,
 }
 
 describe("ScraperTab", () => {
@@ -34,29 +40,32 @@ describe("ScraperTab", () => {
 
   it("renders loaded settings after fetching", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
-      scraper: baseScraper, apify: {} as any, llm: {} as any, notifications: {} as any,
+      scraper: baseScraper, apify: baseApify, llm: {} as any, notifications: {} as any,
     })
     render(<ScraperTab />)
     await waitFor(() => { expect(screen.queryByText("Loading...")).not.toBeInTheDocument() })
     expect(screen.getByLabelText("Active Provider")).toHaveValue("apify")
     // Bright Data isn't a provider choice, only Apify/ScrapeCreators.
     expect(screen.getByLabelText("Active Provider")).not.toHaveTextContent("Bright Data")
+    expect(screen.getByDisplayValue("test-actor-123")).toBeInTheDocument()
   })
 
   it("displays the masked keys when present", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       scraper: { ...baseScraper, bright_data_api_key_masked: "(***bd)", scrape_creators_api_key_masked: "(***sc)" },
-      apify: {} as any, llm: {} as any, notifications: {} as any,
+      apify: { ...baseApify, apify_token_masked: "(***token)" },
+      llm: {} as any, notifications: {} as any,
     })
     render(<ScraperTab />)
     await waitFor(() => { expect(screen.getByText(/\(\*\*\*bd\)/)).toBeInTheDocument() })
     expect(screen.getByText(/\(\*\*\*sc\)/)).toBeInTheDocument()
+    expect(screen.getByText(/\(\*\*\*token\)/)).toBeInTheDocument()
   })
 
   it("shows a warning when switching to a provider that can't consume url-mode filters", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       scraper: { ...baseScraper, provider: "scrape_creators", incompatible_filter_names: ["Trucks near me"] },
-      apify: {} as any, llm: {} as any, notifications: {} as any,
+      apify: baseApify, llm: {} as any, notifications: {} as any,
     })
     render(<ScraperTab />)
     await waitFor(() => { expect(screen.getByText(/Trucks near me/)).toBeInTheDocument() })
@@ -65,7 +74,7 @@ describe("ScraperTab", () => {
   it("reflects the saved enrichment toggle state", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       scraper: { ...baseScraper, bright_data_enrichment_enabled: true },
-      apify: {} as any, llm: {} as any, notifications: {} as any,
+      apify: baseApify, llm: {} as any, notifications: {} as any,
     })
     render(<ScraperTab />)
     await waitFor(() => { expect(screen.queryByText("Loading...")).not.toBeInTheDocument() })
@@ -74,10 +83,10 @@ describe("ScraperTab", () => {
 
   it("calls updateScraperSettings with correct payload when saving", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
-      scraper: baseScraper, apify: {} as any, llm: {} as any, notifications: {} as any,
+      scraper: baseScraper, apify: baseApify, llm: {} as any, notifications: {} as any,
     })
     vi.mocked(updateScraperSettings).mockResolvedValue({
-      scraper: { ...baseScraper, provider: "scrape_creators" }, apify: {} as any, llm: {} as any, notifications: {} as any,
+      scraper: { ...baseScraper, provider: "scrape_creators" }, apify: baseApify, llm: {} as any, notifications: {} as any,
     })
     const user = userEvent.setup()
     render(<ScraperTab />)
@@ -95,10 +104,10 @@ describe("ScraperTab", () => {
 
   it("includes the enrichment toggle and api keys in the save payload", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
-      scraper: baseScraper, apify: {} as any, llm: {} as any, notifications: {} as any,
+      scraper: baseScraper, apify: baseApify, llm: {} as any, notifications: {} as any,
     })
     vi.mocked(updateScraperSettings).mockResolvedValue({
-      scraper: baseScraper, apify: {} as any, llm: {} as any, notifications: {} as any,
+      scraper: baseScraper, apify: baseApify, llm: {} as any, notifications: {} as any,
     })
     const user = userEvent.setup()
     render(<ScraperTab />)
@@ -116,9 +125,9 @@ describe("ScraperTab", () => {
     })
   })
 
-  it("displays error message when save fails", async () => {
+  it("displays error message when scraper save fails", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
-      scraper: baseScraper, apify: {} as any, llm: {} as any, notifications: {} as any,
+      scraper: baseScraper, apify: baseApify, llm: {} as any, notifications: {} as any,
     })
     const errorMsg = "Save failed"
     vi.mocked(updateScraperSettings).mockRejectedValue(new Error(errorMsg))
@@ -130,12 +139,12 @@ describe("ScraperTab", () => {
     await waitFor(() => { expect(screen.getByText(errorMsg)).toBeInTheDocument() })
   })
 
-  it("clears key inputs after successful save", async () => {
+  it("clears key inputs after successful scraper save", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
-      scraper: baseScraper, apify: {} as any, llm: {} as any, notifications: {} as any,
+      scraper: baseScraper, apify: baseApify, llm: {} as any, notifications: {} as any,
     })
     vi.mocked(updateScraperSettings).mockResolvedValue({
-      scraper: { ...baseScraper, bright_data_api_key_masked: "(***bd)" }, apify: {} as any, llm: {} as any, notifications: {} as any,
+      scraper: { ...baseScraper, bright_data_api_key_masked: "(***bd)" }, apify: baseApify, llm: {} as any, notifications: {} as any,
     })
     const user = userEvent.setup()
     render(<ScraperTab />)
@@ -146,5 +155,72 @@ describe("ScraperTab", () => {
     const saveButton = screen.getByRole("button", { name: /save scraper settings/i })
     await user.click(saveButton)
     await waitFor(() => { expect(keyInput.value).toBe("") })
+  })
+
+  it("calls updateApifySettings with correct payload when saving without token", async () => {
+    vi.mocked(fetchSettings).mockResolvedValue({
+      scraper: baseScraper, apify: baseApify, llm: {} as any, notifications: {} as any,
+    })
+    vi.mocked(updateApifySettings).mockResolvedValue({
+      scraper: baseScraper, apify: { actor_id: "new-actor-456", apify_token_masked: null }, llm: {} as any, notifications: {} as any,
+    })
+    const user = userEvent.setup()
+    render(<ScraperTab />)
+    await waitFor(() => { expect(screen.queryByText("Loading...")).not.toBeInTheDocument() })
+    const actorIdInput = screen.getByLabelText("Actor ID")
+    await user.clear(actorIdInput)
+    await user.type(actorIdInput, "new-actor-456")
+    const saveButton = screen.getByRole("button", { name: /save apify settings/i })
+    await user.click(saveButton)
+    await waitFor(() => { expect(updateApifySettings).toHaveBeenCalledWith({ actor_id: "new-actor-456" }) })
+  })
+
+  it("calls updateApifySettings with token when provided", async () => {
+    vi.mocked(fetchSettings).mockResolvedValue({
+      scraper: baseScraper, apify: baseApify, llm: {} as any, notifications: {} as any,
+    })
+    vi.mocked(updateApifySettings).mockResolvedValue({
+      scraper: baseScraper, apify: { ...baseApify, apify_token_masked: "(***token)" }, llm: {} as any, notifications: {} as any,
+    })
+    const user = userEvent.setup()
+    render(<ScraperTab />)
+    await waitFor(() => { expect(screen.queryByText("Loading...")).not.toBeInTheDocument() })
+    const tokenInput = screen.getByLabelText("Apify API Token")
+    await user.type(tokenInput, "new-token-value")
+    const saveButton = screen.getByRole("button", { name: /save apify settings/i })
+    await user.click(saveButton)
+    await waitFor(() => { expect(updateApifySettings).toHaveBeenCalledWith({ actor_id: "test-actor-123", apify_token: "new-token-value" }) })
+  })
+
+  it("displays error message when apify save fails", async () => {
+    vi.mocked(fetchSettings).mockResolvedValue({
+      scraper: baseScraper, apify: baseApify, llm: {} as any, notifications: {} as any,
+    })
+    const errorMsg = "Apify save failed"
+    vi.mocked(updateApifySettings).mockRejectedValue(new Error(errorMsg))
+    const user = userEvent.setup()
+    render(<ScraperTab />)
+    await waitFor(() => { expect(screen.queryByText("Loading...")).not.toBeInTheDocument() })
+    const saveButton = screen.getByRole("button", { name: /save apify settings/i })
+    await user.click(saveButton)
+    await waitFor(() => { expect(screen.getByText(errorMsg)).toBeInTheDocument() })
+  })
+
+  it("clears token input after successful apify save", async () => {
+    vi.mocked(fetchSettings).mockResolvedValue({
+      scraper: baseScraper, apify: baseApify, llm: {} as any, notifications: {} as any,
+    })
+    vi.mocked(updateApifySettings).mockResolvedValue({
+      scraper: baseScraper, apify: { ...baseApify, apify_token_masked: "(***token)" }, llm: {} as any, notifications: {} as any,
+    })
+    const user = userEvent.setup()
+    render(<ScraperTab />)
+    await waitFor(() => { expect(screen.queryByText("Loading...")).not.toBeInTheDocument() })
+    const tokenInput = screen.getByLabelText("Apify API Token") as HTMLInputElement
+    await user.type(tokenInput, "test-token")
+    expect(tokenInput.value).toBe("test-token")
+    const saveButton = screen.getByRole("button", { name: /save apify settings/i })
+    await user.click(saveButton)
+    await waitFor(() => { expect(tokenInput.value).toBe("") })
   })
 })
