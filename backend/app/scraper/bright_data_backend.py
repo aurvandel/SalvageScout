@@ -1,75 +1,35 @@
-"""Bright Data Facebook Marketplace "discover by keyword" backend.
+"""Bright Data Facebook Marketplace item-detail scraper (Web Scraper API, not
+the paid Datasets marketplace — 5K free records/month, $1.5/1K after).
 
-UNVERIFIED CONTRACT: the trigger/poll/snapshot flow, request shape, and
-response fields below come from secondary sources (search-engine summaries of
-Bright Data's docs) — direct fetches to docs.brightdata.com were network-
-blocked from the environment this was written in, so none of it is
-primary-source-confirmed. Before relying on this in production: get a real
-API key + dataset_id, run one call, and adjust `_normalize`/`_trigger`/
-`_poll_until_ready` to match whatever comes back. See the plan file
-(apify-is-going-to-bright-quiche.md) for the full caveat.
+Confirmed by direct calls against the live API — not docs, which turned out to
+describe input modes this dataset doesn't actually accept:
+- Single endpoint: POST /datasets/v3/scrape?dataset_id=gd_lvt9iwuh6fbcwmx1a,
+  body {"input": [{"url": ...}, ...], "limit_per_input": null}.
+- Item-detail ONLY. A keyword input is rejected outright (400: "This input
+  should not contain a keyword field"). A Marketplace search URL is rejected
+  too ("Not a product page", bad_input) — only a real listing item URL works.
+  So this scraper can't discover listings at all; it's a detail-enrichment
+  step layered on top of a real discovery backend (Apify/ScrapeCreators), not
+  a ScraperBackend in its own right.
+- The response is NEWLINE-DELIMITED JSON, one object per input line — not a
+  JSON array, despite what Bright Data's own docs examples show. Order isn't
+  guaranteed to match input order. Errors (bad url, or a transient issue like
+  "Redirect to login page" seen on a live call) come back as their own line
+  with an `error`/`error_code` rather than failing the whole request.
 """
 
-import time
+import json
 from datetime import datetime
 from typing import Any
 
 import httpx
-from sqlalchemy.orm import Session
 
-from app.models import AppSettings, SearchFilter
-from app.scraper.parser import parse_vehicle_specs
-
-BASE_URL = "https://api.brightdata.com/datasets/v3"
-POLL_INTERVAL_SECONDS = 3.0
-POLL_TIMEOUT_SECONDS = 120.0
+BASE_URL = "https://api.brightdata.com/datasets/v3/scrape"
+DATASET_ID = "gd_lvt9iwuh6fbcwmx1a"
 
 
 def _headers(api_key: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-
-
-def _trigger(api_key: str, dataset_id: str, search_filter: SearchFilter, results_limit: int) -> str:
-    payload = [
-        {
-            "keyword": search_filter.query or "",
-            "location": search_filter.location,
-            "min_price": search_filter.min_price,
-            "max_price": search_filter.max_price,
-            "limit": results_limit,
-        }
-    ]
-    response = httpx.post(
-        f"{BASE_URL}/trigger",
-        headers=_headers(api_key),
-        params={"dataset_id": dataset_id, "include_errors": "true"},
-        json=payload,
-        timeout=30.0,
-    )
-    response.raise_for_status()
-    return response.json()["snapshot_id"]
-
-
-def _poll_until_ready(api_key: str, snapshot_id: str) -> None:
-    deadline = time.monotonic() + POLL_TIMEOUT_SECONDS
-    while time.monotonic() < deadline:
-        response = httpx.get(f"{BASE_URL}/progress/{snapshot_id}", headers=_headers(api_key), timeout=15.0)
-        response.raise_for_status()
-        status = response.json().get("status")
-        if status == "ready":
-            return
-        if status == "failed":
-            raise RuntimeError(f"Bright Data snapshot {snapshot_id} failed")
-        time.sleep(POLL_INTERVAL_SECONDS)
-    raise TimeoutError(f"Bright Data snapshot {snapshot_id} did not become ready within {POLL_TIMEOUT_SECONDS}s")
-
-
-def _fetch_snapshot(api_key: str, snapshot_id: str) -> list[dict[str, Any]]:
-    response = httpx.get(
-        f"{BASE_URL}/snapshot/{snapshot_id}", headers=_headers(api_key), params={"format": "json"}, timeout=30.0
-    )
-    response.raise_for_status()
-    return response.json() or []
 
 
 def _parse_timestamp(value: str | None) -> datetime | None:
@@ -79,49 +39,100 @@ def _parse_timestamp(value: str | None) -> datetime | None:
 
 
 def _normalize(raw: dict[str, Any]) -> dict[str, Any]:
-    title = raw.get("title") or ""
     final_price = raw.get("final_price")
     initial_price = raw.get("initial_price")
-    specs = parse_vehicle_specs(title, None)
 
+    # Deliberately omits raw_scraper_data: that column documents which provider
+    # discovered the listing, and this is an enrichment step layered on top of
+    # discovery, not a replacement for it — overwriting it here would lose the
+    # primary source's raw payload for every enriched listing.
+    #
+    # Also deliberately omits is_sold: the discovery provider (Apify/
+    # ScrapeCreators) already owns that field and defaults it to False when
+    # absent, not None — so mapping it here would just get silently clobbered
+    # back to False on the next run's re-scrape, flip-flopping a real "sold"
+    # observation back to "active" instead of sticking.
     return {
-        "fb_listing_id": raw.get("product_id") or raw.get("id"),
-        "url": raw["url"],
-        "title": title,
+        "title": raw.get("title"),
         "description": raw.get("description") or raw.get("seller_description"),
         "price_amount": final_price if final_price is not None else initial_price,
-        "currency": raw.get("currency", "USD"),
+        "currency": raw.get("currency"),
         "strikethrough_price_amount": initial_price if initial_price != final_price else None,
         "condition": raw.get("condition"),
-        # Bright Data's example response has no live/pending/sold flags —
-        # default to Apify's own "unknown means active" convention.
-        "is_live": True,
-        "is_pending": False,
-        "is_sold": False,
         "location_text": raw.get("location"),
-        "latitude": None,
-        "longitude": None,
-        "postal_code": None,
+        "mileage": raw.get("car_miles"),
         "posted_at": _parse_timestamp(raw.get("listing_date")),
-        "raw_scraper_data": raw,
         "photo_urls": raw.get("images") or [],
-        **specs,
     }
 
 
-def fetch_listings(
-    db: Session, search_filter: SearchFilter, results_limit: int, config: AppSettings
-) -> list[dict[str, Any]]:
-    if not config.bright_data_api_key:
-        raise RuntimeError("Bright Data API key is not configured")
-    if not config.bright_data_dataset_id:
-        raise RuntimeError(
-            "Bright Data dataset ID is not configured — find it on the Facebook Marketplace "
-            "scraper's page in the Bright Data dashboard"
-        )
+CHUNK_SIZE = 10
 
-    snapshot_id = _trigger(config.bright_data_api_key, config.bright_data_dataset_id, search_filter, results_limit)
-    _poll_until_ready(config.bright_data_api_key, snapshot_id)
-    raw_items = _fetch_snapshot(config.bright_data_api_key, snapshot_id)
 
-    return [_normalize(raw) for raw in raw_items]
+def _fetch_details_chunk(api_key: str, urls: list[str]) -> dict[str, dict[str, Any]]:
+    response = httpx.post(
+        BASE_URL,
+        headers=_headers(api_key),
+        params={"dataset_id": DATASET_ID, "include_errors": "true"},
+        json={"input": [{"url": url} for url in urls], "limit_per_input": None},
+        timeout=90.0,
+    )
+    response.raise_for_status()
+
+    results: dict[str, dict[str, Any]] = {}
+    for line in response.text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        raw = json.loads(line)
+        if raw.get("error"):
+            continue
+        url = raw.get("url") or (raw.get("input") or {}).get("url")
+        if url:
+            results[url] = _normalize(raw)
+    return results
+
+
+def fetch_details(api_key: str, urls: list[str]) -> dict[str, dict[str, Any]]:
+    """Fetch detail for each url, chunked into batches of CHUNK_SIZE. Returns
+    {url: normalized fields} only for urls that succeeded — a url that errors
+    (bad input, or a transient fetch failure) is simply absent, left for the
+    caller to fall back to whatever the primary scraper backend already
+    returned for it. Chunking bounds the blast radius of a single timeout on
+    a large filter — losing 10 already-billed records to a slow batch is far
+    cheaper than losing all of them in one oversized request."""
+    if not urls:
+        return {}
+
+    results: dict[str, dict[str, Any]] = {}
+    for i in range(0, len(urls), CHUNK_SIZE):
+        results.update(_fetch_details_chunk(api_key, urls[i : i + CHUNK_SIZE]))
+    return results
+
+
+def enrich_listings(items: list[dict[str, Any]], api_key: str) -> list[dict[str, Any]]:
+    """Layer Bright Data's item detail onto already-normalized listings from
+    the primary scraper backend, one batched call for the whole set. Only
+    overwrites fields Bright Data actually returned a value for, so a listing
+    it couldn't fetch (or returned a sparser record for) keeps the primary
+    source's data instead of getting nulled out."""
+    urls = [item["url"] for item in items if item.get("url")]
+    details = fetch_details(api_key, urls)
+
+    enriched = []
+    for item in items:
+        detail = details.get(item.get("url"))
+        if detail is None:
+            enriched.append(item)
+            continue
+        merged = dict(item)
+        for key, value in detail.items():
+            # Identity fields belong to the discovery provider, never to the
+            # enrichment step, even though _normalize doesn't currently emit
+            # them — guard explicitly so that stays true if it ever does.
+            if key in ("fb_listing_id", "url"):
+                continue
+            if value is not None:
+                merged[key] = value
+        enriched.append(merged)
+    return enriched

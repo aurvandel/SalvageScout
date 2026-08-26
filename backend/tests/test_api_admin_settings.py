@@ -82,10 +82,36 @@ def test_patch_scraper_settings_flags_incompatible_url_mode_filters(client):
         json={"name": "raw url filter", "search_mode": "url", "search_url": "https://example.com/search"},
     )
 
-    response = client.patch("/api/admin/settings/scraper", json={"provider": "bright_data"})
+    response = client.patch("/api/admin/settings/scraper", json={"provider": "scrape_creators"})
 
     assert response.status_code == 200
     assert "raw url filter" in response.json()["scraper"]["incompatible_filter_names"]
+
+
+def test_patch_scraper_settings_toggles_bright_data_enrichment(client):
+    response = client.patch(
+        "/api/admin/settings/scraper",
+        json={"bright_data_api_key": "bd-fake-5678", "bright_data_enrichment_enabled": True},
+    )
+
+    assert response.status_code == 200
+    body = response.json()["scraper"]
+    assert body["bright_data_enrichment_enabled"] is True
+    assert "5678" in body["bright_data_api_key_masked"]
+
+    # Explicitly turning it back off must actually persist False, not be
+    # treated as "unset" and left unchanged.
+    response = client.patch("/api/admin/settings/scraper", json={"bright_data_enrichment_enabled": False})
+    assert response.json()["scraper"]["bright_data_enrichment_enabled"] is False
+
+
+def test_patch_scraper_settings_rejects_bright_data_as_a_provider(client):
+    # Bright Data can't discover listings (item-detail only) so it isn't a
+    # selectable scraper_provider, only an enrichment toggle.
+    response = client.patch("/api/admin/settings/scraper", json={"provider": "bright_data"})
+    assert response.status_code == 400
+
+
 
 
 def test_patch_notification_settings_toggles_channels(client):

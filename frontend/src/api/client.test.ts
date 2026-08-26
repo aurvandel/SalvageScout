@@ -39,9 +39,9 @@ const mockSettings: AppSettingsOut = {
   apify: { actor_id: '123', apify_token_masked: '***token***' },
   scraper: {
     provider: 'apify',
-    available_providers: ['apify', 'bright_data', 'scrape_creators'],
+    available_providers: ['apify', 'scrape_creators'],
     bright_data_api_key_masked: null,
-    bright_data_dataset_id: null,
+    bright_data_enrichment_enabled: false,
     scrape_creators_api_key_masked: null,
     incompatible_filter_names: [],
   },
