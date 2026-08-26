@@ -23,6 +23,9 @@ const mockSearchFilters = [
     condition: null,
     results_limit: 100,
     criteria_profile_id: null,
+    sort_by: null,
+    delivery_method: null,
+    availability: null,
   },
   {
     id: 2,
@@ -39,13 +42,26 @@ const mockSearchFilters = [
     condition: 'used',
     results_limit: 150,
     criteria_profile_id: null,
+    sort_by: null,
+    delivery_method: null,
+    availability: null,
   },
 ]
+
+function mockSettings(provider: string) {
+  vi.mocked(client.fetchSettings).mockResolvedValue({
+    llm: {} as never,
+    apify: {} as never,
+    scraper: { provider, available_providers: ['apify', 'scrape_creators'], bright_data_api_key_masked: null, bright_data_enrichment_enabled: false, scrape_creators_api_key_masked: null, incompatible_filter_names: [] },
+    notifications: {} as never,
+  })
+}
 
 describe('SearchFiltersTab', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(client.fetchCriteriaProfiles).mockResolvedValue([])
+    mockSettings('apify')
     vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
@@ -120,6 +136,9 @@ describe('SearchFiltersTab', () => {
       condition: null,
       results_limit: 100,
       criteria_profile_id: null,
+      sort_by: null,
+      delivery_method: null,
+      availability: null,
     }
 
     vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce(mockSearchFilters)
@@ -159,6 +178,9 @@ describe('SearchFiltersTab', () => {
         condition: null,
         results_limit: 100,
         criteria_profile_id: null,
+        sort_by: null,
+        delivery_method: null,
+        availability: null,
       })
     })
   })
@@ -179,6 +201,9 @@ describe('SearchFiltersTab', () => {
       condition: 'used',
       results_limit: 100,
       criteria_profile_id: null,
+      sort_by: null,
+      delivery_method: null,
+      availability: null,
     }
 
     vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce(mockSearchFilters)
@@ -240,6 +265,9 @@ describe('SearchFiltersTab', () => {
         condition: 'used',
         results_limit: 100,
         criteria_profile_id: null,
+        sort_by: null,
+        delivery_method: null,
+        availability: null,
       })
     })
   })
@@ -288,6 +316,54 @@ describe('SearchFiltersTab', () => {
       expect(screen.getByLabelText('Min Price')).toBeInTheDocument()
       expect(screen.getByLabelText('Condition')).toBeInTheDocument()
     })
+  })
+
+  it('shows ScrapeCreators-only fields as enum selects when that provider is active', async () => {
+    mockSettings('scrape_creators')
+    vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce([])
+
+    render(<SearchFiltersTab />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Name')).toBeInTheDocument()
+    })
+
+    const modeSelect = screen.getByLabelText('Search Mode') as HTMLSelectElement
+    await userEvent.selectOptions(modeSelect, 'location')
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Location (city, state)')).toBeInTheDocument()
+      expect(screen.getByLabelText('Sort By')).toBeInTheDocument()
+      expect(screen.getByLabelText('Delivery Method')).toBeInTheDocument()
+      expect(screen.getByLabelText('Availability')).toBeInTheDocument()
+    })
+
+    expect((screen.getByLabelText('Condition') as HTMLSelectElement).tagName).toBe('SELECT')
+    expect((screen.getByLabelText('Date Listed') as HTMLSelectElement).tagName).toBe('SELECT')
+  })
+
+  it('hides ScrapeCreators-only fields and uses free-form condition/days for Apify', async () => {
+    mockSettings('apify')
+    vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce([])
+
+    render(<SearchFiltersTab />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Name')).toBeInTheDocument()
+    })
+
+    const modeSelect = screen.getByLabelText('Search Mode') as HTMLSelectElement
+    await userEvent.selectOptions(modeSelect, 'location')
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Location (Facebook city slug)')).toBeInTheDocument()
+    })
+
+    expect(screen.queryByLabelText('Sort By')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Delivery Method')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Availability')).not.toBeInTheDocument()
+    expect((screen.getByLabelText('Condition') as HTMLInputElement).tagName).toBe('INPUT')
+    expect((screen.getByLabelText('Days Listed') as HTMLInputElement).tagName).toBe('INPUT')
   })
 
   it('edits existing filter', async () => {
@@ -434,6 +510,9 @@ describe('SearchFiltersTab', () => {
       condition: null,
       results_limit: 100,
       criteria_profile_id: null,
+      sort_by: null,
+      delivery_method: null,
+      availability: null,
     }
 
     vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce(mockSearchFilters)

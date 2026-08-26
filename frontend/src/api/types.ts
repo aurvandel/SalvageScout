@@ -122,6 +122,9 @@ export interface SearchFilterOut {
   condition: string | null
   results_limit: number
   criteria_profile_id: number | null
+  sort_by: string | null
+  delivery_method: string | null
+  availability: string | null
 }
 
 export interface CriteriaProfileIn {

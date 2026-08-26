@@ -70,6 +70,9 @@ const mockSearchFilter: SearchFilterOut = {
   condition: null,
   results_limit: 100,
   criteria_profile_id: null,
+  sort_by: null,
+  delivery_method: null,
+  availability: null,
 }
 
 const mockCriteriaProfile: CriteriaProfileOut = {

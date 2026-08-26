@@ -205,6 +205,67 @@ def test_fetch_listings_passes_through_valid_condition(db):
 
 
 @respx.mock
+def test_fetch_listings_passes_through_sort_delivery_availability_and_date_listed(db):
+    respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/location/search").mock(
+        return_value=httpx.Response(200, json=LOCATION_RESPONSE)
+    )
+    search_route = respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/search").mock(
+        return_value=httpx.Response(200, json=SEARCH_RESPONSE)
+    )
+    respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/item").mock(
+        return_value=httpx.Response(200, json=ITEM_RESPONSE)
+    )
+
+    sf = _search_filter(
+        db,
+        sort_by="Price_Ascend",
+        delivery_method="Local_Pickup",
+        availability="Available",
+        days_listed=7,
+    )
+    fetch_listings(db, sf, 10, _config())
+
+    params = search_route.calls.last.request.url.params
+    assert params["sort_by"] == "price_ascend"
+    assert params["delivery_method"] == "local_pickup"
+    assert params["availability"] == "available"
+    assert params["date_listed"] == "7"
+
+
+@respx.mock
+def test_fetch_listings_drops_invalid_sort_delivery_availability_and_date_listed(db):
+    # sort_by/delivery_method/availability are fixed ScrapeCreators enums, and
+    # date_listed only accepts the three bucketed values below — days_listed
+    # also feeds Apify's free-form `daysSinceListed` URL param (see
+    # url_builder.py), so an arbitrary day count must be dropped here rather
+    # than forwarded as-is.
+    respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/location/search").mock(
+        return_value=httpx.Response(200, json=LOCATION_RESPONSE)
+    )
+    search_route = respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/search").mock(
+        return_value=httpx.Response(200, json=SEARCH_RESPONSE)
+    )
+    respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/item").mock(
+        return_value=httpx.Response(200, json=ITEM_RESPONSE)
+    )
+
+    sf = _search_filter(
+        db,
+        sort_by="bogus",
+        delivery_method="bogus",
+        availability="bogus",
+        days_listed=14,
+    )
+    fetch_listings(db, sf, 10, _config())
+
+    params = search_route.calls.last.request.url.params
+    assert "sort_by" not in params
+    assert "delivery_method" not in params
+    assert "availability" not in params
+    assert "date_listed" not in params
+
+
+@respx.mock
 def test_fetch_listings_caps_detail_calls_at_results_limit(db):
     # Confirmed live: `count` in the search request is advisory — a call with
     # count=5 came back with 13 listings. Without an explicit slice, results_limit

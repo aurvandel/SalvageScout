@@ -18,6 +18,17 @@ MILES_TO_KM = 1.60934
 # so only forward values that match; anything else is dropped rather than sent.
 _VALID_CONDITIONS = {"new", "used_like_new", "used_good", "used_fair"}
 
+# Same story for these — confirmed against the search endpoint's live tool
+# schema. sort_by/delivery_method/availability have no Apify equivalent so
+# they're only ever set when this provider is active. date_listed reuses the
+# shared days_listed column (a raw day count, matched to Apify's own
+# `daysSinceListed` URL param) but ScrapeCreators only accepts these three
+# bucketed values — anything else is dropped rather than guessed at.
+_VALID_SORT_BY = {"suggested", "distance_ascend", "creation_time_descend", "price_ascend", "price_descend"}
+_VALID_DELIVERY_METHODS = {"all", "local_pickup", "shipping"}
+_VALID_AVAILABILITY = {"available", "sold", "all"}
+_VALID_DATE_LISTED = {1, 7, 30}
+
 
 def _headers(api_key: str) -> dict[str, str]:
     return {"x-api-key": api_key}
@@ -103,6 +114,14 @@ def _search(
         params["max_price"] = search_filter.max_price
     if search_filter.condition and search_filter.condition.lower() in _VALID_CONDITIONS:
         params["condition"] = search_filter.condition.lower()
+    if search_filter.days_listed in _VALID_DATE_LISTED:
+        params["date_listed"] = str(search_filter.days_listed)
+    if search_filter.sort_by and search_filter.sort_by.lower() in _VALID_SORT_BY:
+        params["sort_by"] = search_filter.sort_by.lower()
+    if search_filter.delivery_method and search_filter.delivery_method.lower() in _VALID_DELIVERY_METHODS:
+        params["delivery_method"] = search_filter.delivery_method.lower()
+    if search_filter.availability and search_filter.availability.lower() in _VALID_AVAILABILITY:
+        params["availability"] = search_filter.availability.lower()
 
     # Single page only — daily volumes at this project's scale (tens of results
     # per filter) fit in one page; a `has_next_page`/`cursor` follow-up loop can

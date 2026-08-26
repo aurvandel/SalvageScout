@@ -1,6 +1,16 @@
 import { useEffect, useState } from 'react'
-import { fetchSearchFilters, createSearchFilter, updateSearchFilter, deleteSearchFilter, fetchCriteriaProfiles } from '../../api/client'
+import { fetchSearchFilters, createSearchFilter, updateSearchFilter, deleteSearchFilter, fetchCriteriaProfiles, fetchSettings } from '../../api/client'
 import type { SearchFilterOut, CriteriaProfileOut } from '../../api/types'
+
+// ScrapeCreators' marketplace search endpoint only accepts these fixed enums
+// (confirmed against its live tool schema) — Apify's URL-based search has no
+// equivalent, so these fields only make sense, and only render, when
+// ScrapeCreators is the active provider.
+const SC_CONDITIONS = ['new', 'used_like_new', 'used_good', 'used_fair']
+const SC_DATE_LISTED = ['1', '7', '30']
+const SC_SORT_BY = ['suggested', 'distance_ascend', 'creation_time_descend', 'price_ascend', 'price_descend']
+const SC_DELIVERY_METHODS = ['all', 'local_pickup', 'shipping']
+const SC_AVAILABILITY = ['available', 'sold', 'all']
 
 const emptyForm = {
   name: '',
@@ -16,20 +26,28 @@ const emptyForm = {
   condition: '',
   results_limit: '100',
   criteria_profile_id: '' as number | '',
+  sort_by: '',
+  delivery_method: '',
+  availability: '',
 }
 
 export default function SearchFiltersTab() {
   const [filters, setFilters] = useState<SearchFilterOut[]>([])
   const [profiles, setProfiles] = useState<CriteriaProfileOut[]>([])
+  const [scraperProvider, setScraperProvider] = useState('apify')
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const isScrapeCreators = scraperProvider === 'scrape_creators'
 
   useEffect(() => {
     load()
     fetchCriteriaProfiles()
       .then(data => setProfiles(data.sort((a, b) => b.version - a.version)))
+      .catch(() => {})
+    fetchSettings()
+      .then(data => setScraperProvider(data.scraper.provider))
       .catch(() => {})
   }, [])
 
@@ -65,6 +83,9 @@ export default function SearchFiltersTab() {
       condition: sf.condition || '',
       results_limit: sf.results_limit?.toString() || '100',
       criteria_profile_id: sf.criteria_profile_id ?? '',
+      sort_by: sf.sort_by || '',
+      delivery_method: sf.delivery_method || '',
+      availability: sf.availability || '',
     })
   }
 
@@ -88,6 +109,9 @@ export default function SearchFiltersTab() {
       condition: form.search_mode === 'location' && form.condition ? form.condition : null,
       results_limit: parseInt(form.results_limit) || 100,
       criteria_profile_id: form.criteria_profile_id === '' ? null : form.criteria_profile_id,
+      sort_by: form.search_mode === 'location' && form.sort_by ? form.sort_by : null,
+      delivery_method: form.search_mode === 'location' && form.delivery_method ? form.delivery_method : null,
+      availability: form.search_mode === 'location' && form.availability ? form.availability : null,
     }
   }
 
@@ -193,11 +217,11 @@ export default function SearchFiltersTab() {
         ) : (
           <>
             <div className="config-item">
-              <label htmlFor="sf-location">Location (Facebook city slug)</label>
+              <label htmlFor="sf-location">{isScrapeCreators ? 'Location (city, state)' : 'Location (Facebook city slug)'}</label>
               <input
                 id="sf-location"
                 type="text"
-                placeholder="newyork"
+                placeholder={isScrapeCreators ? 'Austin, Texas' : 'newyork'}
                 value={form.location}
                 onChange={(e) => setForm(prev => ({ ...prev, location: e.target.value }))}
               />
@@ -220,14 +244,63 @@ export default function SearchFiltersTab() {
                 <input id="sf-radius" type="number" value={form.radius_miles} onChange={(e) => setForm(prev => ({ ...prev, radius_miles: e.target.value }))} />
               </div>
               <div className="config-item">
-                <label htmlFor="sf-days">Days Listed</label>
-                <input id="sf-days" type="number" value={form.days_listed} onChange={(e) => setForm(prev => ({ ...prev, days_listed: e.target.value }))} />
+                <label htmlFor="sf-days">{isScrapeCreators ? 'Date Listed' : 'Days Listed'}</label>
+                {isScrapeCreators ? (
+                  <select id="sf-days" value={form.days_listed} onChange={(e) => setForm(prev => ({ ...prev, days_listed: e.target.value }))}>
+                    <option value="">Any time</option>
+                    {SC_DATE_LISTED.map(v => (
+                      <option key={v} value={v}>Past {v} day{v === '1' ? '' : 's'}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input id="sf-days" type="number" value={form.days_listed} onChange={(e) => setForm(prev => ({ ...prev, days_listed: e.target.value }))} />
+                )}
               </div>
             </div>
             <div className="config-item">
               <label htmlFor="sf-condition">Condition</label>
-              <input id="sf-condition" type="text" placeholder="used" value={form.condition} onChange={(e) => setForm(prev => ({ ...prev, condition: e.target.value }))} />
+              {isScrapeCreators ? (
+                <select id="sf-condition" value={form.condition} onChange={(e) => setForm(prev => ({ ...prev, condition: e.target.value }))}>
+                  <option value="">Any condition</option>
+                  {SC_CONDITIONS.map(v => (
+                    <option key={v} value={v}>{v}</option>
+                  ))}
+                </select>
+              ) : (
+                <input id="sf-condition" type="text" placeholder="used" value={form.condition} onChange={(e) => setForm(prev => ({ ...prev, condition: e.target.value }))} />
+              )}
             </div>
+            {isScrapeCreators && (
+              <div className="filter-grid">
+                <div className="config-item">
+                  <label htmlFor="sf-sort-by">Sort By</label>
+                  <select id="sf-sort-by" value={form.sort_by} onChange={(e) => setForm(prev => ({ ...prev, sort_by: e.target.value }))}>
+                    <option value="">Suggested</option>
+                    {SC_SORT_BY.filter(v => v !== 'suggested').map(v => (
+                      <option key={v} value={v}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="config-item">
+                  <label htmlFor="sf-delivery">Delivery Method</label>
+                  <select id="sf-delivery" value={form.delivery_method} onChange={(e) => setForm(prev => ({ ...prev, delivery_method: e.target.value }))}>
+                    <option value="">Any</option>
+                    {SC_DELIVERY_METHODS.map(v => (
+                      <option key={v} value={v}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="config-item">
+                  <label htmlFor="sf-availability">Availability</label>
+                  <select id="sf-availability" value={form.availability} onChange={(e) => setForm(prev => ({ ...prev, availability: e.target.value }))}>
+                    <option value="">Any</option>
+                    {SC_AVAILABILITY.map(v => (
+                      <option key={v} value={v}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
           </>
         )}
 
