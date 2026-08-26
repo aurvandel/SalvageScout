@@ -203,6 +203,32 @@ def test_fetch_listings_passes_through_valid_condition(db):
 
 
 @respx.mock
+def test_fetch_listings_caps_detail_calls_at_results_limit(db):
+    # Confirmed live: `count` in the search request is advisory — a call with
+    # count=5 came back with 13 listings. Without an explicit slice, results_limit
+    # wouldn't bound the (paid, one-per-listing) detail calls at all.
+    many_listings = {
+        **SEARCH_RESPONSE,
+        "listings": [{**SEARCH_RESPONSE["listings"][0], "id": str(i)} for i in range(13)],
+    }
+    respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/location/search").mock(
+        return_value=httpx.Response(200, json=LOCATION_RESPONSE)
+    )
+    respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/search").mock(
+        return_value=httpx.Response(200, json=many_listings)
+    )
+    item_route = respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/item").mock(
+        return_value=httpx.Response(200, json=ITEM_RESPONSE)
+    )
+
+    sf = _search_filter(db)
+    items = fetch_listings(db, sf, 5, _config())
+
+    assert len(items) == 5
+    assert len(item_route.calls) == 5
+
+
+@respx.mock
 def test_fetch_listings_skips_geocoding_when_already_cached(db):
     location_route = respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/location/search").mock(
         return_value=httpx.Response(200, json=LOCATION_RESPONSE)

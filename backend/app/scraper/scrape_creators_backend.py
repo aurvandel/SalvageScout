@@ -169,6 +169,11 @@ def fetch_listings(
 
     latitude, longitude = _resolve_coordinates(db, search_filter, api_key)
     items = _search(api_key, search_filter.query, latitude, longitude, results_limit, search_filter)
+    # `count` in the search request is advisory, not enforced — a live call with
+    # count=5 came back with 13 listings and has_next_page=true. Slice explicitly
+    # so a filter's results_limit actually bounds the (much more expensive)
+    # per-listing detail calls below, one credit each.
+    items = items[:results_limit]
 
     normalized = []
     for item in items:
