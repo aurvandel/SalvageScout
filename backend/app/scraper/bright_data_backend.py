@@ -42,6 +42,10 @@ def _normalize(raw: dict[str, Any]) -> dict[str, Any]:
     final_price = raw.get("final_price")
     initial_price = raw.get("initial_price")
 
+    # Deliberately omits raw_scraper_data: that column documents which provider
+    # discovered the listing, and this is an enrichment step layered on top of
+    # discovery, not a replacement for it — overwriting it here would lose the
+    # primary source's raw payload for every enriched listing.
     return {
         "title": raw.get("title"),
         "description": raw.get("description") or raw.get("seller_description"),
@@ -57,14 +61,10 @@ def _normalize(raw: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def fetch_details(api_key: str, urls: list[str]) -> dict[str, dict[str, Any]]:
-    """Fetch detail for each url in one batched call. Returns {url: normalized
-    fields} only for urls that succeeded — a url that errors (bad input, or a
-    transient fetch failure) is simply absent, left for the caller to fall
-    back to whatever the primary scraper backend already returned for it."""
-    if not urls:
-        return {}
+CHUNK_SIZE = 10
 
+
+def _fetch_details_chunk(api_key: str, urls: list[str]) -> dict[str, dict[str, Any]]:
     response = httpx.post(
         BASE_URL,
         headers=_headers(api_key),
@@ -88,6 +88,23 @@ def fetch_details(api_key: str, urls: list[str]) -> dict[str, dict[str, Any]]:
     return results
 
 
+def fetch_details(api_key: str, urls: list[str]) -> dict[str, dict[str, Any]]:
+    """Fetch detail for each url, chunked into batches of CHUNK_SIZE. Returns
+    {url: normalized fields} only for urls that succeeded — a url that errors
+    (bad input, or a transient fetch failure) is simply absent, left for the
+    caller to fall back to whatever the primary scraper backend already
+    returned for it. Chunking bounds the blast radius of a single timeout on
+    a large filter — losing 10 already-billed records to a slow batch is far
+    cheaper than losing all of them in one oversized request."""
+    if not urls:
+        return {}
+
+    results: dict[str, dict[str, Any]] = {}
+    for i in range(0, len(urls), CHUNK_SIZE):
+        results.update(_fetch_details_chunk(api_key, urls[i : i + CHUNK_SIZE]))
+    return results
+
+
 def enrich_listings(items: list[dict[str, Any]], api_key: str) -> list[dict[str, Any]]:
     """Layer Bright Data's item detail onto already-normalized listings from
     the primary scraper backend, one batched call for the whole set. Only
@@ -105,6 +122,11 @@ def enrich_listings(items: list[dict[str, Any]], api_key: str) -> list[dict[str,
             continue
         merged = dict(item)
         for key, value in detail.items():
+            # Identity fields belong to the discovery provider, never to the
+            # enrichment step, even though _normalize doesn't currently emit
+            # them — guard explicitly so that stays true if it ever does.
+            if key in ("fb_listing_id", "url"):
+                continue
             if value is not None:
                 merged[key] = value
         enriched.append(merged)

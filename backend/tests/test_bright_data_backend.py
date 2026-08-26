@@ -83,6 +83,29 @@ def test_fetch_details_returns_empty_without_making_a_request():
 
 
 @respx.mock
+def test_fetch_details_chunks_large_batches():
+    # A single oversized batch risks losing everything to one timeout; chunking
+    # bounds that to CHUNK_SIZE records per request.
+    urls = [f"https://www.facebook.com/marketplace/item/{i}/" for i in range(15)]
+    route = respx.post("https://api.brightdata.com/datasets/v3/scrape").mock(
+        side_effect=lambda request: httpx.Response(
+            200,
+            text=_ndjson(*[
+                {**RAW_ITEM_A, "url": item["url"], "input": {"url": item["url"]}}
+                for item in json.loads(request.content)["input"]
+            ]),
+        )
+    )
+
+    results = fetch_details("fake-key", urls)
+
+    assert route.call_count == 2
+    assert len(json.loads(route.calls[0].request.content)["input"]) == 10
+    assert len(json.loads(route.calls[1].request.content)["input"]) == 5
+    assert set(results.keys()) == set(urls)
+
+
+@respx.mock
 def test_enrich_listings_merges_detail_onto_primary_source_data():
     respx.post("https://api.brightdata.com/datasets/v3/scrape").mock(
         return_value=httpx.Response(200, text=_ndjson(RAW_ITEM_A))
@@ -123,3 +146,20 @@ def test_enrich_listings_keeps_primary_data_when_bright_data_has_no_detail():
 
 def test_enrich_listings_skips_the_api_call_for_an_empty_list():
     assert enrich_listings([], "fake-key") == []
+
+
+def test_enrich_listings_never_overwrites_identity_fields(monkeypatch):
+    # _normalize doesn't currently emit fb_listing_id/url, but the merge loop
+    # guards against them explicitly rather than relying on that omission —
+    # this proves the guard itself, independent of _normalize's current shape.
+    monkeypatch.setattr(
+        "app.scraper.bright_data_backend.fetch_details",
+        lambda api_key, urls: {ITEM_A_URL: {"fb_listing_id": "wrong-id", "url": "https://evil.example/", "title": "new title"}},
+    )
+
+    items = [{"fb_listing_id": "correct-id", "url": ITEM_A_URL, "title": "old title"}]
+    enriched = enrich_listings(items, "fake-key")
+
+    assert enriched[0]["fb_listing_id"] == "correct-id"
+    assert enriched[0]["url"] == ITEM_A_URL
+    assert enriched[0]["title"] == "new title"
