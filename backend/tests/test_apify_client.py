@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
 
-from app.scraper.apify_client import ACTOR_ID, fetch_listings
+from app.scraper.apify_client import ACTOR_ID, fetch_listings, get_account_usage
 
 
 def test_fetch_listings_calls_actor_with_expected_input(mocker):
@@ -53,3 +53,30 @@ def test_fetch_listings_uses_custom_actor_id(mocker):
 def test_fetch_listings_raises_when_token_missing():
     with pytest.raises(RuntimeError, match="Apify token"):
         fetch_listings("https://example.com", results_limit=5, apify_token=None)
+
+
+def test_get_account_usage_reads_limits(mocker):
+    mock_client = MagicMock()
+    mock_client.user.return_value.limits.return_value = MagicMock(
+        current=MagicMock(monthly_usage_usd=12.5),
+        limits=MagicMock(max_monthly_usage_usd=300.0),
+        monthly_usage_cycle=MagicMock(
+            start_at=MagicMock(isoformat=lambda: "2026-08-01T00:00:00+00:00"),
+            end_at=MagicMock(isoformat=lambda: "2026-08-31T23:59:59+00:00"),
+        ),
+    )
+    mocker.patch("app.scraper.apify_client.ApifyClient", return_value=mock_client)
+
+    result = get_account_usage("fake-token")
+
+    assert result == {
+        "used_usd": 12.5,
+        "limit_usd": 300.0,
+        "cycle_start": "2026-08-01T00:00:00+00:00",
+        "cycle_end": "2026-08-31T23:59:59+00:00",
+    }
+
+
+def test_get_account_usage_raises_when_token_missing():
+    with pytest.raises(RuntimeError, match="Apify token"):
+        get_account_usage(None)

@@ -1,7 +1,7 @@
 from typing import Protocol
 
 from app.models import CriteriaProfile, Listing
-from app.scorer.schemas import ScoreResult
+from app.scorer.schemas import ScoreResult, TokenUsage
 
 
 class Scorer(Protocol):
@@ -12,7 +12,7 @@ class Scorer(Protocol):
 
     def __call__(
         self, listing: Listing, criteria_profile: CriteriaProfile, model: str, api_key: str | None
-    ) -> ScoreResult: ...
+    ) -> tuple[ScoreResult, TokenUsage]: ...
 
 
 def build_listing_text(listing: Listing) -> str:

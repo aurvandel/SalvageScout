@@ -582,3 +582,52 @@
   gap: 10px;
   align-items: center;
 }
+
+.usage-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 1.1rem;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.usage-summary-sep {
+  color: var(--muted);
+}
+
+.usage-bar {
+  width: 100%;
+  max-width: 420px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border-soft);
+  overflow: hidden;
+}
+
+.usage-bar-fill {
+  height: 100%;
+  background: var(--high);
+  transition: width 0.2s ease;
+}
+
+.usage-bar-fill-mid {
+  background: var(--mid);
+}
+
+.usage-bar-fill-high {
+  background: var(--low);
+}
+
+.usage-subheading {
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 20px 0 10px;
+}
+
+.usage-subheading:first-of-type {
+  margin-top: 0;
+}

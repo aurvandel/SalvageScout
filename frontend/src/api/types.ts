@@ -146,3 +146,27 @@ export interface ArenaRunOut {
   results: ArenaScoreResult[]
   created_at: string
 }
+
+export interface ApifyUsageOut {
+  configured: boolean
+  used_usd: number | null
+  limit_usd: number | null
+  cycle_start: string | null
+  cycle_end: string | null
+  error: string | null
+}
+
+export interface LLMProviderUsageOut {
+  provider: string
+  model: string
+  scored_count: number
+  input_tokens: number
+  output_tokens: number
+  estimated_cost_usd: number | null
+}
+
+export interface UsageOut {
+  apify: ApifyUsageOut
+  llm_this_month: LLMProviderUsageOut[]
+  llm_all_time: LLMProviderUsageOut[]
+}

@@ -7,3 +7,8 @@ class ScoreResult(BaseModel):
     pros: list[str]
     cons: list[str]
     dealbreaker_flags: list[str]
+
+
+class TokenUsage(BaseModel):
+    input_tokens: int
+    output_tokens: int
