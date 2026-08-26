@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { fetchSearchFilters, createSearchFilter, updateSearchFilter, deleteSearchFilter } from '../../api/client'
-import type { SearchFilterOut } from '../../api/types'
+import { fetchSearchFilters, createSearchFilter, updateSearchFilter, deleteSearchFilter, fetchCriteriaProfiles } from '../../api/client'
+import type { SearchFilterOut, CriteriaProfileOut } from '../../api/types'
 
 const emptyForm = {
   name: '',
@@ -15,10 +15,12 @@ const emptyForm = {
   days_listed: '',
   condition: '',
   results_limit: '100',
+  criteria_profile_id: '' as number | '',
 }
 
 export default function SearchFiltersTab() {
   const [filters, setFilters] = useState<SearchFilterOut[]>([])
+  const [profiles, setProfiles] = useState<CriteriaProfileOut[]>([])
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState<string | null>(null)
@@ -26,6 +28,9 @@ export default function SearchFiltersTab() {
 
   useEffect(() => {
     load()
+    fetchCriteriaProfiles()
+      .then(data => setProfiles(data.sort((a, b) => b.version - a.version)))
+      .catch(() => {})
   }, [])
 
   async function load() {
@@ -36,6 +41,12 @@ export default function SearchFiltersTab() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load search filters')
     }
+  }
+
+  function profileLabel(id: number | null): string {
+    if (id == null) return 'Default active prompt'
+    const profile = profiles.find(p => p.id === id)
+    return profile ? `${profile.name} (v${profile.version})` : `Prompt #${id}`
   }
 
   function startEdit(sf: SearchFilterOut) {
@@ -53,6 +64,7 @@ export default function SearchFiltersTab() {
       days_listed: sf.days_listed?.toString() || '',
       condition: sf.condition || '',
       results_limit: sf.results_limit?.toString() || '100',
+      criteria_profile_id: sf.criteria_profile_id ?? '',
     })
   }
 
@@ -75,6 +87,7 @@ export default function SearchFiltersTab() {
       days_listed: form.search_mode === 'location' && form.days_listed ? parseInt(form.days_listed) : null,
       condition: form.search_mode === 'location' && form.condition ? form.condition : null,
       results_limit: parseInt(form.results_limit) || 100,
+      criteria_profile_id: form.criteria_profile_id === '' ? null : form.criteria_profile_id,
     }
   }
 
@@ -133,6 +146,7 @@ export default function SearchFiltersTab() {
                 {sf.search_mode === 'url' ? sf.search_url : `${sf.location}${sf.query ? ` · ${sf.query}` : ''}`}
               </span>
               <span className="results-limit-badge">↓ {sf.results_limit}</span>
+              <span className="mode-badge">{profileLabel(sf.criteria_profile_id)}</span>
             </div>
             <div className="filter-row-actions">
               <label className="inline-toggle">
@@ -216,6 +230,21 @@ export default function SearchFiltersTab() {
             </div>
           </>
         )}
+
+        <div className="config-item">
+          <label htmlFor="sf-profile">Scoring Prompt</label>
+          <select
+            id="sf-profile"
+            value={form.criteria_profile_id}
+            onChange={(e) => setForm(prev => ({ ...prev, criteria_profile_id: e.target.value === '' ? '' : Number(e.target.value) }))}
+          >
+            <option value="">Default active prompt</option>
+            {profiles.map(p => (
+              <option key={p.id} value={p.id}>{p.name} (v{p.version}){p.is_active ? ' — active' : ''}</option>
+            ))}
+          </select>
+          <p className="help-text">Which prompt scores listings from this search. Leave as default to use whichever prompt is globally active.</p>
+        </div>
 
         <div className="config-item">
           <label htmlFor="sf-results-limit">Results Limit (per scrape)</label>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { fetchListings } from '../api/client'
-import type { ListingOut, ListingView } from '../api/types'
+import { fetchListings, fetchSearchFilters } from '../api/client'
+import type { ListingOut, ListingView, SearchFilterOut } from '../api/types'
 import ListingCard from '../components/ListingCard'
 
 const PAGE_SIZE = 24
@@ -24,16 +24,28 @@ export default function ListingFeed() {
   const [listings, setListings] = useState<ListingOut[]>([])
   const [minScore, setMinScore] = useState<number | ''>('')
   const [view, setView] = useState<ListingView>('active')
+  const [searchFilters, setSearchFilters] = useState<SearchFilterOut[]>([])
+  const [searchFilterId, setSearchFilterId] = useState<number | ''>('')
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    fetchSearchFilters().then(setSearchFilters).catch(() => {})
+  }, [])
+
   const reload = useCallback(() => {
     setLoading(true)
     setError(null)
-    fetchListings({ minScore: minScore === '' ? undefined : minScore, view, limit: PAGE_SIZE, offset: 0 })
+    fetchListings({
+      minScore: minScore === '' ? undefined : minScore,
+      view,
+      searchFilterId: searchFilterId === '' ? undefined : searchFilterId,
+      limit: PAGE_SIZE,
+      offset: 0,
+    })
       .then((page) => {
         setListings(page.items)
         setHasMore(page.has_more)
@@ -41,7 +53,7 @@ export default function ListingFeed() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [minScore, view])
+  }, [minScore, view, searchFilterId])
 
   useEffect(() => {
     reload()
@@ -49,7 +61,13 @@ export default function ListingFeed() {
 
   const loadMore = useCallback(() => {
     setLoadingMore(true)
-    fetchListings({ minScore: minScore === '' ? undefined : minScore, view, limit: PAGE_SIZE, offset })
+    fetchListings({
+      minScore: minScore === '' ? undefined : minScore,
+      view,
+      searchFilterId: searchFilterId === '' ? undefined : searchFilterId,
+      limit: PAGE_SIZE,
+      offset,
+    })
       .then((page) => {
         setListings((prev) => [...prev, ...page.items])
         setHasMore(page.has_more)
@@ -57,7 +75,7 @@ export default function ListingFeed() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoadingMore(false))
-  }, [minScore, view, offset])
+  }, [minScore, view, searchFilterId, offset])
 
   const sentinelRef = useRef<HTMLDivElement | null>(null)
 
@@ -107,6 +125,18 @@ export default function ListingFeed() {
               </button>
             ))}
           </div>
+          <label>
+            Search
+            <select
+              value={searchFilterId}
+              onChange={(e) => setSearchFilterId(e.target.value === '' ? '' : Number(e.target.value))}
+            >
+              <option value="">All Searches</option>
+              {searchFilters.map((sf) => (
+                <option key={sf.id} value={sf.id}>{sf.name}</option>
+              ))}
+            </select>
+          </label>
           <label>
             Min score
             <input

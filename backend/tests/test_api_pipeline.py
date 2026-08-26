@@ -19,7 +19,7 @@ def test_run_pipeline_without_active_profile_returns_400(db, client):
     sf = _make_search_filter(db)
     response = client.post(f"/api/pipeline/run/{sf.id}")
     assert response.status_code == 400
-    assert "active criteria profile" in response.json()["detail"]
+    assert "No criteria profile configured" in response.json()["detail"]
 
 
 def test_run_pipeline_success(db, client, mocker):

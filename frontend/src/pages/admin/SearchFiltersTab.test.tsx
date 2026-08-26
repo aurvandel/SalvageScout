@@ -22,6 +22,7 @@ const mockSearchFilters = [
     days_listed: null,
     condition: null,
     results_limit: 100,
+    criteria_profile_id: null,
   },
   {
     id: 2,
@@ -37,12 +38,14 @@ const mockSearchFilters = [
     days_listed: 30,
     condition: 'used',
     results_limit: 150,
+    criteria_profile_id: null,
   },
 ]
 
 describe('SearchFiltersTab', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(client.fetchCriteriaProfiles).mockResolvedValue([])
     vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
@@ -116,6 +119,7 @@ describe('SearchFiltersTab', () => {
       days_listed: null,
       condition: null,
       results_limit: 100,
+      criteria_profile_id: null,
     }
 
     vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce(mockSearchFilters)
@@ -154,6 +158,7 @@ describe('SearchFiltersTab', () => {
         days_listed: null,
         condition: null,
         results_limit: 100,
+        criteria_profile_id: null,
       })
     })
   })
@@ -173,6 +178,7 @@ describe('SearchFiltersTab', () => {
       days_listed: 7,
       condition: 'used',
       results_limit: 100,
+      criteria_profile_id: null,
     }
 
     vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce(mockSearchFilters)
@@ -233,6 +239,7 @@ describe('SearchFiltersTab', () => {
         days_listed: 7,
         condition: 'used',
         results_limit: 100,
+        criteria_profile_id: null,
       })
     })
   })
@@ -426,6 +433,7 @@ describe('SearchFiltersTab', () => {
       days_listed: null,
       condition: null,
       results_limit: 100,
+      criteria_profile_id: null,
     }
 
     vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce(mockSearchFilters)

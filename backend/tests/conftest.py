@@ -8,6 +8,18 @@ os.environ.setdefault(
     "DATABASE_URL", "postgresql+psycopg://salvagescout:salvagescout@localhost:5432/salvagescout_test"
 )
 
+# setdefault() above is a no-op if DATABASE_URL is already set in the environment
+# (e.g. docker-compose sets it to the real dev database for the backend service) —
+# so without this check, running pytest inside that container would point the
+# _create_schema fixture's teardown drop_all() at real data instead of a test DB.
+_database_url = os.environ["DATABASE_URL"]
+if not _database_url.rsplit("/", 1)[-1].startswith("salvagescout_test"):
+    raise RuntimeError(
+        f"Refusing to run tests: DATABASE_URL={_database_url!r} does not point at a "
+        "salvagescout_test database. The test suite drops all tables on teardown — "
+        "set DATABASE_URL to a database named 'salvagescout_test...' before running pytest."
+    )
+
 from app.db import Base, engine, get_db  # noqa: E402
 from app.db import SessionLocal  # noqa: E402
 from app import models  # noqa: E402,F401 — registers all model classes on Base.metadata

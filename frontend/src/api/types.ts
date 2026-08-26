@@ -111,6 +111,7 @@ export interface SearchFilterOut {
   days_listed: number | null
   condition: string | null
   results_limit: number
+  criteria_profile_id: number | null
 }
 
 export interface CriteriaProfileIn {

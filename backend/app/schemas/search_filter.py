@@ -19,6 +19,7 @@ class SearchFilterIn(BaseModel):
     days_listed: int | None = None
     condition: str | None = None
     results_limit: int = 100
+    criteria_profile_id: int | None = None
 
     @model_validator(mode="after")
     def _check_mode_requirements(self):
