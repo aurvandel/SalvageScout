@@ -2,9 +2,13 @@ from app.models import CriteriaProfile, Listing, Score
 from app.settings_service import get_app_settings
 
 
-def _seed_score(db, model_used="anthropic/claude-haiku-4-5", input_tokens=1000, output_tokens=200):
+def _seed_score(db, model_used="anthropic/claude-haiku-4-5", input_tokens=1000, output_tokens=200, fb_listing_id="1"):
     listing = Listing(
-        fb_listing_id="1", url="https://example.com", title="2014 Chevrolet Impala", price_amount=2500.0, raw_apify_data={}
+        fb_listing_id=fb_listing_id,
+        url=f"https://example.com/{fb_listing_id}",
+        title="2014 Chevrolet Impala",
+        price_amount=2500.0,
+        raw_apify_data={},
     )
     profile = CriteriaProfile(name="default", prompt_text="Score this car.")
     db.add_all([listing, profile])
@@ -85,6 +89,7 @@ def test_get_usage_aggregates_llm_spend_by_model(client, db):
     assert row["provider"] == "anthropic"
     assert row["model"] == "claude-haiku-4-5"
     assert row["scored_count"] == 1
+    assert row["priced_count"] == 1
     assert row["estimated_cost_usd"] == 6.0  # $1/M in + $5/M out at 1M tokens each
 
 
@@ -95,6 +100,23 @@ def test_get_usage_unknown_model_has_no_cost_estimate(client, db):
 
     row = response.json()["llm_all_time"][0]
     assert row["estimated_cost_usd"] is None
+
+
+def test_get_usage_counts_pre_tracking_scores_separately_from_priced_ones(client, db):
+    """Score rows written before this feature have NULL tokens (migration adds
+    nullable columns, no backfill). scored_count must include them so the total
+    isn't silently wrong, while priced_count/estimated_cost_usd must reflect only
+    the rows that actually have token data — otherwise the UI shows a dollar
+    figure that quietly excludes rows its own count claims to cover."""
+    _seed_score(db, model_used="anthropic/claude-haiku-4-5", input_tokens=1_000_000, output_tokens=1_000_000, fb_listing_id="1")
+    _seed_score(db, model_used="anthropic/claude-haiku-4-5", input_tokens=None, output_tokens=None, fb_listing_id="2")
+
+    response = client.get("/api/admin/usage")
+
+    row = response.json()["llm_all_time"][0]
+    assert row["scored_count"] == 2
+    assert row["priced_count"] == 1
+    assert row["estimated_cost_usd"] == 6.0
 
 
 def test_get_usage_this_month_excludes_nothing_for_freshly_seeded_scores(client, db):

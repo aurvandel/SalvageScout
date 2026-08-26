@@ -160,6 +160,7 @@ export interface LLMProviderUsageOut {
   provider: string
   model: string
   scored_count: number
+  priced_count: number
   input_tokens: number
   output_tokens: number
   estimated_cost_usd: number | null

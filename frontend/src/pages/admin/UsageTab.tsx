@@ -70,7 +70,7 @@ export default function UsageTab() {
             )}
             {apify.cycle_start && apify.cycle_end && (
               <p className="help-text">
-                Billing cycle: {new Date(apify.cycle_start).toLocaleDateString()} – {new Date(apify.cycle_end).toLocaleDateString()}
+                Apify billing cycle (not calendar month): {new Date(apify.cycle_start).toLocaleDateString()} – {new Date(apify.cycle_end).toLocaleDateString()}
               </p>
             )}
           </div>
@@ -81,7 +81,7 @@ export default function UsageTab() {
         <h2>LLM Spend (Estimated)</h2>
         <p className="help-text">
           No provider exposes a real credit-balance API, so this is an estimate from tokens used × published pricing —
-          not a live account balance.
+          not a live account balance. Covers regular scoring only (Arena test runs aren't tracked).
         </p>
 
         <h3 className="usage-subheading">This month</h3>
@@ -113,6 +113,9 @@ function UsageTable({ rows }: { rows: UsageOut['llm_this_month'] }) {
             <span className="result-value" style={{ fontSize: '1.1rem' }}>
               {row.estimated_cost_usd != null ? formatUsd(row.estimated_cost_usd) : 'no pricing data'}
             </span>
+            {row.priced_count < row.scored_count && (
+              <span className="filter-detail">(priced {row.priced_count} of {row.scored_count} — rest predate token tracking)</span>
+            )}
           </div>
         </div>
       ))}

@@ -278,10 +278,15 @@ def run_arena(payload: ArenaRunIn, db: Session = Depends(get_db)):
 
 
 def _aggregate_llm_usage(query) -> list[LLMProviderUsageOut]:
+    """Older Score rows predate token tracking and have NULL input/output_tokens.
+    priced_count (COUNT skips NULLs) tracks how many of scored_count actually fed
+    the cost estimate, so the UI can say "priced N of M" instead of implying the
+    dollar figure covers every scored listing."""
     rows = (
         query.with_entities(
             Score.model_used,
             func.count(Score.id),
+            func.count(Score.input_tokens),
             func.coalesce(func.sum(Score.input_tokens), 0),
             func.coalesce(func.sum(Score.output_tokens), 0),
         )
@@ -289,16 +294,17 @@ def _aggregate_llm_usage(query) -> list[LLMProviderUsageOut]:
         .all()
     )
     results = []
-    for model_used, scored_count, input_tokens, output_tokens in rows:
+    for model_used, scored_count, priced_count, input_tokens, output_tokens in rows:
         provider, _, model = model_used.partition("/")
         results.append(
             LLMProviderUsageOut(
                 provider=provider,
                 model=model,
                 scored_count=scored_count,
+                priced_count=priced_count,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
-                estimated_cost_usd=estimate_cost_usd(model_used, input_tokens, output_tokens),
+                estimated_cost_usd=estimate_cost_usd(model_used, input_tokens, output_tokens) if priced_count else None,
             )
         )
     return sorted(results, key=lambda r: (r.provider, r.model))

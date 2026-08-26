@@ -14,6 +14,7 @@ class LLMProviderUsageOut(BaseModel):
     provider: str
     model: str
     scored_count: int
+    priced_count: int
     input_tokens: int
     output_tokens: int
     estimated_cost_usd: float | None
