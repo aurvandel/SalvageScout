@@ -3,6 +3,7 @@ import pytest
 from app.models import CriteriaProfile, Score, SearchFilter
 from app.pipeline import resolve_criteria_profile, run_pipeline_for_filter
 from app.scorer.schemas import ScoreResult
+from app.scraper.normalize import normalize_listing
 
 
 def _make_search_filter(db):
@@ -39,8 +40,11 @@ def test_run_pipeline_scores_and_notifies_new_listings(db, raw_listings, monkeyp
     sf = _make_search_filter(db)
     _make_active_profile(db)
 
-    # ingest_listings (called by run_scrape) hits real Apify — patch fetch_listings only.
-    mocker.patch("app.scraper.service.fetch_listings", return_value=raw_listings)
+    # ingest_listings (called by run_scrape) hits the real DB — patch the scraper backend only.
+    mocker.patch(
+        "app.scraper.service.get_scraper",
+        return_value=lambda db, sf, limit, cfg: [normalize_listing(raw) for raw in raw_listings],
+    )
 
     result = run_pipeline_for_filter(db, sf, results_limit=10)
 
@@ -81,7 +85,10 @@ def test_run_pipeline_skips_listings_already_scored_under_active_profile(db, raw
     fake_result = ScoreResult(match_score=85, summary="Good.", pros=[], cons=[], dealbreaker_flags=[])
     mocker.patch("app.scorer.service.get_scorer", return_value=lambda l, c, m, k: fake_result)
     mocker.patch("app.notifier.service.get_notifier", return_value=mocker.Mock())
-    mocker.patch("app.scraper.service.fetch_listings", return_value=raw_listings)
+    mocker.patch(
+        "app.scraper.service.get_scraper",
+        return_value=lambda db, sf, limit, cfg: [normalize_listing(raw) for raw in raw_listings],
+    )
 
     sf = _make_search_filter(db)
     _make_active_profile(db)

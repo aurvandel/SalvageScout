@@ -115,21 +115,22 @@ Only include the index and keep fields. Keep all indices 0 to {len(titles)-1}.""
 
 
 def filter_listings_by_query(
-    db: Session, raw_items: list[dict[str, Any]], search_filter: SearchFilter
+    db: Session, items: list[dict[str, Any]], search_filter: SearchFilter
 ) -> list[dict[str, Any]]:
-    """Filter raw listings to match search query using LLM.
-    Returns filtered list of items. If no query or LLM error, returns all items."""
+    """Filter already-normalized listings (see app/scraper/base.py) to match the
+    search query using an LLM. Returns filtered list of items. If no query or
+    LLM error, returns all items."""
     query = resolve_query(search_filter)
     if not query:
-        return raw_items
+        return items
 
     titles = [
-        (raw.get("listingTitle") or "").strip()
-        for raw in raw_items
+        (item.get("title") or "").strip()
+        for item in items
     ]
 
     if not titles or not any(titles):
-        return raw_items
+        return items
 
     config = get_app_settings(db)
     api_key = None
@@ -153,22 +154,22 @@ def filter_listings_by_query(
             model = "gemini-2.0-flash"
     else:
         logger.warning(f"Unknown LLM provider: {provider}, keeping all results")
-        return raw_items
+        return items
 
     if not api_key:
         logger.warning(f"No API key for {provider}, keeping all results")
-        return raw_items
+        return items
 
     # Get verdicts from LLM
     verdicts = _batch_filter_with_llm(titles, query, provider, model, api_key)
 
     # Apply verdicts to filter items
     filtered = [
-        item for item, keep in zip(raw_items, verdicts) if keep
+        item for item, keep in zip(items, verdicts) if keep
     ]
 
-    rejected_count = len(raw_items) - len(filtered)
+    rejected_count = len(items) - len(filtered)
     if rejected_count > 0:
-        logger.info(f"Query filter '{query}': rejected {rejected_count}/{len(raw_items)} results")
+        logger.info(f"Query filter '{query}': rejected {rejected_count}/{len(items)} results")
 
     return filtered

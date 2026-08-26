@@ -3,7 +3,7 @@ from app.notifier.service import notify_if_above_threshold
 
 
 def _seed(db, match_score=85):
-    listing = Listing(fb_listing_id="1", url="https://example.com/1", title="2014 Impala", price_amount=2500.0, raw_apify_data={})
+    listing = Listing(fb_listing_id="1", url="https://example.com/1", title="2014 Impala", price_amount=2500.0, raw_scraper_data={})
     profile = CriteriaProfile(name="default", prompt_text="Score this car.")
     db.add_all([listing, profile])
     db.commit()

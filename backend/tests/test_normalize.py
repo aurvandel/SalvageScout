@@ -20,7 +20,8 @@ def test_normalize_listing_maps_core_fields(raw_listing):
     assert fields["make"] == "Ford"
     assert fields["model"] == "Crown Victoria"
     assert fields["mileage"] == 215000
-    assert fields["raw_apify_data"] == raw_listing
+    assert fields["raw_scraper_data"] == raw_listing
+    assert len(fields["photo_urls"]) == 11
 
 
 def test_normalize_listing_parses_posted_at(raw_listing):

@@ -37,6 +37,25 @@ class ApifySettingsIn(BaseModel):
     apify_token: str | None = None
 
 
+class ScraperSettingsOut(BaseModel):
+    provider: str
+    available_providers: list[str]
+    bright_data_api_key_masked: str | None
+    bright_data_dataset_id: str | None
+    scrape_creators_api_key_masked: str | None
+    # Active search filters that can't be scraped by `provider` (search_mode="url"
+    # filters, which only Apify's backend can consume) — surfaced here so a
+    # provider switch doesn't silently stop producing listings for them.
+    incompatible_filter_names: list[str]
+
+
+class ScraperSettingsIn(BaseModel):
+    provider: str | None = None
+    bright_data_api_key: str | None = None
+    bright_data_dataset_id: str | None = None
+    scrape_creators_api_key: str | None = None
+
+
 class NotificationSettingsOut(BaseModel):
     discord_enabled: bool
     discord_webhook_url_masked: str | None
@@ -58,4 +77,5 @@ class NotificationSettingsIn(BaseModel):
 class AppSettingsOut(BaseModel):
     llm: LLMSettingsOut
     apify: ApifySettingsOut
+    scraper: ScraperSettingsOut
     notifications: NotificationSettingsOut

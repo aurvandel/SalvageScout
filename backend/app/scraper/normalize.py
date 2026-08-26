@@ -42,7 +42,8 @@ def normalize_listing(raw: dict[str, Any]) -> dict[str, Any]:
         "longitude": location.get("longitude"),
         "postal_code": reverse_geocode.get("postal_code_trimmed"),
         "posted_at": _parse_timestamp(raw.get("timestamp")),
-        "raw_apify_data": raw,
+        "raw_scraper_data": raw,
+        "photo_urls": extract_photo_urls(raw),
         **specs,
     }
 

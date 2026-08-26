@@ -9,7 +9,7 @@ def _seed(db):
         url="https://example.com",
         title="2014 Chevrolet Impala",
         price_amount=2500.0,
-        raw_apify_data={},
+        raw_scraper_data={},
     )
     profile = CriteriaProfile(name="default", prompt_text="Score this car.")
     db.add_all([listing, profile])

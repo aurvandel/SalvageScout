@@ -120,8 +120,8 @@ class TestBatchFilterWithLLM:
 
 class TestFilterListingsByQuery:
     def _make_listing(self, title: str) -> dict:
-        """Helper to create a raw listing with a title."""
-        return {"id": "123", "listingTitle": title}
+        """Helper to create an already-normalized listing with a title."""
+        return {"id": "123", "title": title}
 
     def test_no_query_passes_everything(self):
         """No query specified means pass everything through."""
@@ -170,8 +170,8 @@ class TestFilterListingsByQuery:
             mock_db = MagicMock()
             result = filter_listings_by_query(mock_db, items, sf)
             assert len(result) == 2
-            assert result[0]["listingTitle"] == "2015 Honda Civic Sedan"
-            assert result[1]["listingTitle"] == "2018 Ford F-150 Truck"
+            assert result[0]["title"] == "2015 Honda Civic Sedan"
+            assert result[1]["title"] == "2018 Ford F-150 Truck"
 
     @patch("app.scraper.query_filter._batch_filter_with_llm")
     @patch("app.scraper.query_filter.get_app_settings")
@@ -197,7 +197,7 @@ class TestFilterListingsByQuery:
             mock_db = MagicMock()
             result = filter_listings_by_query(mock_db, items, sf)
             assert len(result) == 1
-            assert result[0]["listingTitle"] == "Trek Mountain Bike 21-speed"
+            assert result[0]["title"] == "Trek Mountain Bike 21-speed"
 
     @patch("app.scraper.query_filter._batch_filter_with_llm")
     @patch("app.scraper.query_filter.get_app_settings")
@@ -222,7 +222,7 @@ class TestFilterListingsByQuery:
             mock_db = MagicMock()
             result = filter_listings_by_query(mock_db, items, sf)
             assert len(result) == 1
-            assert result[0]["listingTitle"] == "iPad Pro 12.9 inch 256GB"
+            assert result[0]["title"] == "iPad Pro 12.9 inch 256GB"
 
     @patch("app.scraper.query_filter._batch_filter_with_llm")
     @patch("app.scraper.query_filter.get_app_settings")

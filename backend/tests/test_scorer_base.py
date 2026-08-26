@@ -16,7 +16,7 @@ def _listing(**overrides):
         location_text="Rocky Mount, NC",
         condition="USED",
         description="Great car",
-        raw_apify_data={},
+        raw_scraper_data={},
     )
     defaults.update(overrides)
     return Listing(**defaults)
