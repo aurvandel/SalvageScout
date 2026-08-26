@@ -61,6 +61,7 @@ const mockSearchFilter: SearchFilterOut = {
   days_listed: null,
   condition: null,
   results_limit: 100,
+  criteria_profile_id: null,
 }
 
 const mockCriteriaProfile: CriteriaProfileOut = {
@@ -126,18 +127,27 @@ describe('fetchListings - URL construction and query parameters', () => {
     expect(mockFetch).toHaveBeenCalledWith('/api/listings?min_score=60&limit=15', undefined)
   })
 
+  it('constructs correct URL with only searchFilterId', async () => {
+    mockFetch.mockResolvedValue(jsonResponse({ items: [], has_more: false }))
+
+    await client.fetchListings({ searchFilterId: 3 })
+
+    expect(mockFetch).toHaveBeenCalledWith('/api/listings?search_filter_id=3', undefined)
+  })
+
   it('constructs correct URL with all parameters in declared order', async () => {
     mockFetch.mockResolvedValue(jsonResponse({ items: [], has_more: false }))
 
     await client.fetchListings({
       minScore: 80,
       view: 'hidden',
+      searchFilterId: 3,
       limit: 25,
       offset: 50,
     })
 
     expect(mockFetch).toHaveBeenCalledWith(
-      '/api/listings?min_score=80&view=hidden&limit=25&offset=50',
+      '/api/listings?min_score=80&view=hidden&search_filter_id=3&limit=25&offset=50',
       undefined,
     )
   })

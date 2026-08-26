@@ -22,12 +22,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 export function fetchListings(params: {
   minScore?: number
   view?: ListingView
+  searchFilterId?: number
   limit?: number
   offset?: number
 }): Promise<ListingPage> {
   const query = new URLSearchParams()
   if (params.minScore != null) query.set('min_score', String(params.minScore))
   if (params.view != null) query.set('view', params.view)
+  if (params.searchFilterId != null) query.set('search_filter_id', String(params.searchFilterId))
   if (params.limit != null) query.set('limit', String(params.limit))
   if (params.offset != null) query.set('offset', String(params.offset))
   const qs = query.toString()

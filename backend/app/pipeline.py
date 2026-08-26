@@ -19,14 +19,23 @@ def get_active_criteria_profile(db: Session) -> CriteriaProfile | None:
     return db.query(CriteriaProfile).filter_by(is_active=True).first()
 
 
+def resolve_criteria_profile(db: Session, search_filter: SearchFilter) -> CriteriaProfile | None:
+    """A search scores against its own linked profile if it has one, otherwise
+    falls back to the single globally active profile — so filters created before
+    this link existed keep working unchanged."""
+    if search_filter.criteria_profile_id is not None:
+        return db.get(CriteriaProfile, search_filter.criteria_profile_id)
+    return get_active_criteria_profile(db)
+
+
 def run_pipeline_for_filter(db: Session, search_filter: SearchFilter, results_limit: int = 20) -> PipelineResult:
-    """Scrape a filter, then score+notify only listings not yet scored under the
-    currently active criteria profile — re-seeing an already-scored listing on a
-    later scrape shouldn't re-spend an LLM call. This is the single orchestration
-    path for both the API's manual trigger and the future scheduler."""
-    criteria_profile = get_active_criteria_profile(db)
+    """Scrape a filter, then score+notify only listings not yet scored under its
+    resolved criteria profile — re-seeing an already-scored listing on a later
+    scrape shouldn't re-spend an LLM call. This is the single orchestration path
+    for both the API's manual trigger and the scheduler."""
+    criteria_profile = resolve_criteria_profile(db, search_filter)
     if criteria_profile is None:
-        raise ValueError("No active criteria profile configured")
+        raise ValueError(f"No criteria profile configured for search filter {search_filter.name!r}")
 
     listings = run_scrape(db, search_filter, results_limit=results_limit)
 

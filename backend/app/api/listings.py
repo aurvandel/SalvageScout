@@ -16,6 +16,7 @@ router = APIRouter()
 def list_listings(
     min_score: int | None = None,
     view: Literal["active", "hidden", "favorites"] = "active",
+    search_filter_id: int | None = None,
     limit: int = 24,
     offset: int = 0,
     db: Session = Depends(get_db),
@@ -26,6 +27,9 @@ def list_listings(
 
     query = db.query(Listing).outerjoin(best_score, Listing.id == best_score.c.listing_id)
     query = query.filter(Listing.is_deleted.is_(False))
+
+    if search_filter_id is not None:
+        query = query.filter(Listing.search_filter_id == search_filter_id)
 
     if view == "hidden":
         query = query.filter(Listing.is_hidden.is_(True))

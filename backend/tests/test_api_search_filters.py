@@ -1,3 +1,6 @@
+from app.models import CriteriaProfile
+
+
 def test_create_and_list_search_filters(client):
     payload = {"name": "sedans near me", "search_url": "https://www.facebook.com/marketplace/x/search/?query=sedan"}
 
@@ -78,4 +81,27 @@ def test_delete_search_filter(client):
 
 def test_delete_search_filter_not_found(client):
     response = client.delete("/api/search-filters/999999")
+    assert response.status_code == 404
+
+
+def test_create_search_filter_with_linked_criteria_profile(client, db):
+    profile = CriteriaProfile(name="iphones", prompt_text="Score iPhones.", is_active=False)
+    db.add(profile)
+    db.commit()
+    db.refresh(profile)
+
+    response = client.post(
+        "/api/search-filters",
+        json={"name": "iphones", "search_url": "https://example.com/1", "criteria_profile_id": profile.id},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["criteria_profile_id"] == profile.id
+
+
+def test_create_search_filter_with_unknown_criteria_profile_rejected(client):
+    response = client.post(
+        "/api/search-filters",
+        json={"name": "x", "search_url": "https://example.com/1", "criteria_profile_id": 999999},
+    )
     assert response.status_code == 404

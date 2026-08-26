@@ -1,4 +1,4 @@
-from app.models import CriteriaProfile, Listing, ListingImage, Score
+from app.models import CriteriaProfile, Listing, ListingImage, Score, SearchFilter
 
 
 def _make_listing(db, fb_listing_id, **overrides):
@@ -79,6 +79,23 @@ def test_list_listings_min_score_filter(db, client):
 
     ids = [item["fb_listing_id"] for item in response.json()["items"]]
     assert ids == ["high"]
+
+
+def test_list_listings_filters_by_search_filter_id(db, client):
+    cars_filter = SearchFilter(name="cars", search_url="https://example.com/cars")
+    phones_filter = SearchFilter(name="phones", search_url="https://example.com/phones")
+    db.add_all([cars_filter, phones_filter])
+    db.commit()
+    db.refresh(cars_filter)
+    db.refresh(phones_filter)
+
+    cars = _make_listing(db, "car-1", search_filter_id=cars_filter.id)
+    _make_listing(db, "phone-1", search_filter_id=phones_filter.id)
+
+    response = client.get("/api/listings", params={"search_filter_id": cars_filter.id})
+
+    ids = [item["fb_listing_id"] for item in response.json()["items"]]
+    assert ids == [cars.fb_listing_id]
 
 
 def test_list_listings_pagination(db, client):

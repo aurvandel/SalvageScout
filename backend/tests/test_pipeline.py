@@ -1,7 +1,7 @@
 import pytest
 
 from app.models import CriteriaProfile, Score, SearchFilter
-from app.pipeline import run_pipeline_for_filter
+from app.pipeline import resolve_criteria_profile, run_pipeline_for_filter
 from app.scorer.schemas import ScoreResult
 
 
@@ -25,7 +25,7 @@ def test_run_pipeline_raises_without_active_profile(db, raw_listings, mocker):
     mocker.patch("app.pipeline.run_scrape", return_value=[])
     sf = _make_search_filter(db)
 
-    with pytest.raises(ValueError, match="active criteria profile"):
+    with pytest.raises(ValueError, match="No criteria profile configured"):
         run_pipeline_for_filter(db, sf)
 
 
@@ -48,6 +48,32 @@ def test_run_pipeline_scores_and_notifies_new_listings(db, raw_listings, monkeyp
     assert result.scores_created == 3
     assert result.notifications_sent == 3 * 2  # discord + telegram, all above threshold
     assert db.query(Score).count() == 3
+
+
+def test_resolve_criteria_profile_prefers_linked_profile_over_global_active(db):
+    global_active = _make_active_profile(db)
+    linked = CriteriaProfile(name="iphones", prompt_text="Score iPhones.", is_active=False)
+    db.add(linked)
+    db.commit()
+    db.refresh(linked)
+
+    sf = _make_search_filter(db)
+    sf.criteria_profile_id = linked.id
+    db.commit()
+
+    resolved = resolve_criteria_profile(db, sf)
+
+    assert resolved.id == linked.id
+    assert resolved.id != global_active.id
+
+
+def test_resolve_criteria_profile_falls_back_to_global_active_when_unlinked(db):
+    global_active = _make_active_profile(db)
+    sf = _make_search_filter(db)
+
+    resolved = resolve_criteria_profile(db, sf)
+
+    assert resolved.id == global_active.id
 
 
 def test_run_pipeline_skips_listings_already_scored_under_active_profile(db, raw_listings, monkeypatch, mocker):

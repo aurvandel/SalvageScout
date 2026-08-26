@@ -10,10 +10,12 @@ vi.mock('../api/client')
 
 describe('ListingFeed', () => {
   const mockFetchListings = vi.mocked(client.fetchListings)
+  const mockFetchSearchFilters = vi.mocked(client.fetchSearchFilters)
   let alertSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockFetchSearchFilters.mockResolvedValue([])
     alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
   })
 

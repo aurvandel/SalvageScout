@@ -1,9 +1,13 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, Integer, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+
+if TYPE_CHECKING:
+    from app.models.criteria_profile import CriteriaProfile
 
 
 class SearchFilter(Base):
@@ -13,6 +17,12 @@ class SearchFilter(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    # Which prompt scores this search's listings. Falls back to the globally
+    # active CriteriaProfile (see pipeline.resolve_criteria_profile) when unset,
+    # so existing filters keep working without configuration.
+    criteria_profile_id: Mapped[int | None] = mapped_column(ForeignKey("criteria_profiles.id"), nullable=True)
+    criteria_profile: Mapped["CriteriaProfile | None"] = relationship()
 
     # "url": search_url is used as-is. "location": search_url is built from the
     # structured fields below at scrape time — see app/scraper/url_builder.py.
