@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import LLMTab from './admin/LLMTab'
-import ApifyTab from './admin/ApifyTab'
 import ScraperTab from './admin/ScraperTab'
 import NotificationsTab from './admin/NotificationsTab'
 import SearchFiltersTab from './admin/SearchFiltersTab'
@@ -12,7 +11,6 @@ import './AdminPanel.css'
 
 const TABS = [
   { id: 'llm', label: 'LLM' },
-  { id: 'apify', label: 'Apify' },
   { id: 'scraper', label: 'Scraper' },
   { id: 'usage', label: 'Usage' },
   { id: 'notifications', label: 'Notifications' },
@@ -45,7 +43,6 @@ export default function AdminPanel() {
 
       <div className="tab-content">
         {activeTab === 'llm' && <LLMTab />}
-        {activeTab === 'apify' && <ApifyTab />}
         {activeTab === 'scraper' && <ScraperTab />}
         {activeTab === 'usage' && <UsageTab />}
         {activeTab === 'notifications' && <NotificationsTab />}

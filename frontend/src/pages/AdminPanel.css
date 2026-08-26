@@ -58,6 +58,16 @@
   border: 1px solid var(--glass-border-soft);
 }
 
+.settings-form + .settings-form {
+  margin-top: 16px;
+}
+
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--glass-border);
+  margin: 24px 0;
+}
+
 .config-item {
   margin-bottom: 20px;
 }
