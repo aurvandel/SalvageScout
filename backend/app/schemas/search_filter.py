@@ -21,6 +21,12 @@ class SearchFilterIn(BaseModel):
     results_limit: int = 100
     criteria_profile_id: int | None = None
 
+    # ScrapeCreators-only — ignored by other providers. See
+    # app/scraper/scrape_creators_backend.py for the accepted enum values.
+    sort_by: str | None = None
+    delivery_method: str | None = None
+    availability: str | None = None
+
     @model_validator(mode="after")
     def _check_mode_requirements(self):
         if self.search_mode not in ("url", "location"):
