@@ -13,8 +13,9 @@ const { fetchSettings, updateScraperSettings } = clientModule
 
 const baseScraper = {
   provider: "apify",
-  available_providers: ["apify", "bright_data", "scrape_creators"],
+  available_providers: ["apify", "scrape_creators"],
   bright_data_api_key_masked: null,
+  bright_data_enrichment_enabled: false,
   scrape_creators_api_key_masked: null,
   incompatible_filter_names: [],
 }
@@ -38,6 +39,8 @@ describe("ScraperTab", () => {
     render(<ScraperTab />)
     await waitFor(() => { expect(screen.queryByText("Loading...")).not.toBeInTheDocument() })
     expect(screen.getByLabelText("Active Provider")).toHaveValue("apify")
+    // Bright Data isn't a provider choice, only Apify/ScrapeCreators.
+    expect(screen.getByLabelText("Active Provider")).not.toHaveTextContent("Bright Data")
   })
 
   it("displays the masked keys when present", async () => {
@@ -50,7 +53,7 @@ describe("ScraperTab", () => {
     expect(screen.getByText(/\(\*\*\*sc\)/)).toBeInTheDocument()
   })
 
-  it("shows a warning when switching providers strands url-mode filters", async () => {
+  it("shows a warning when switching to a provider that can't consume url-mode filters", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       scraper: { ...baseScraper, provider: "scrape_creators", incompatible_filter_names: ["Trucks near me"] },
       apify: {} as any, llm: {} as any, notifications: {} as any,
@@ -59,14 +62,14 @@ describe("ScraperTab", () => {
     await waitFor(() => { expect(screen.getByText(/Trucks near me/)).toBeInTheDocument() })
   })
 
-  it("does not warn about url-mode filters when switching to Bright Data", async () => {
+  it("reflects the saved enrichment toggle state", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
-      scraper: { ...baseScraper, provider: "bright_data", incompatible_filter_names: ["Trucks near me"] },
+      scraper: { ...baseScraper, bright_data_enrichment_enabled: true },
       apify: {} as any, llm: {} as any, notifications: {} as any,
     })
     render(<ScraperTab />)
     await waitFor(() => { expect(screen.queryByText("Loading...")).not.toBeInTheDocument() })
-    expect(screen.queryByText(/Trucks near me/)).not.toBeInTheDocument()
+    expect(screen.getByRole("checkbox")).toBeChecked()
   })
 
   it("calls updateScraperSettings with correct payload when saving", async () => {
@@ -83,11 +86,14 @@ describe("ScraperTab", () => {
     const saveButton = screen.getByRole("button", { name: /save scraper settings/i })
     await user.click(saveButton)
     await waitFor(() => {
-      expect(updateScraperSettings).toHaveBeenCalledWith({ provider: "scrape_creators" })
+      expect(updateScraperSettings).toHaveBeenCalledWith({
+        provider: "scrape_creators",
+        bright_data_enrichment_enabled: false,
+      })
     })
   })
 
-  it("includes api keys in payload only when provided", async () => {
+  it("includes the enrichment toggle and api keys in the save payload", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       scraper: baseScraper, apify: {} as any, llm: {} as any, notifications: {} as any,
     })
@@ -97,12 +103,14 @@ describe("ScraperTab", () => {
     const user = userEvent.setup()
     render(<ScraperTab />)
     await waitFor(() => { expect(screen.queryByText("Loading...")).not.toBeInTheDocument() })
+    await user.click(screen.getByRole("checkbox"))
     await user.type(screen.getByLabelText("Bright Data API Key"), "new-bd-key")
     const saveButton = screen.getByRole("button", { name: /save scraper settings/i })
     await user.click(saveButton)
     await waitFor(() => {
       expect(updateScraperSettings).toHaveBeenCalledWith({
         provider: "apify",
+        bright_data_enrichment_enabled: true,
         bright_data_api_key: "new-bd-key",
       })
     })

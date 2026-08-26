@@ -14,12 +14,13 @@ def test_get_scraper_unknown_provider_raises():
 
 
 def test_get_available_scraper_providers():
-    assert get_available_scraper_providers() == ["apify", "bright_data", "scrape_creators"]
+    # Bright Data isn't here — its scraper is item-detail only and can't
+    # discover listings from a SearchFilter (see registry.py).
+    assert get_available_scraper_providers() == ["apify", "scrape_creators"]
 
 
-def test_supports_search_mode_url_for_apify_and_bright_data():
+def test_supports_search_mode_url_only_for_apify():
     assert supports_search_mode("apify", "url") is True
-    assert supports_search_mode("bright_data", "url") is True
     assert supports_search_mode("scrape_creators", "url") is False
 
 

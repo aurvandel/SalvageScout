@@ -1,97 +1,125 @@
 import json
 
 import httpx
-import pytest
 import respx
 
-from app.models import AppSettings, SearchFilter
-from app.scraper.bright_data_backend import fetch_listings
+from app.scraper.bright_data_backend import enrich_listings, fetch_details
 
-# Shape confirmed against Bright Data's own docs (facebook-marketplace-discover-by-url).
-SCRAPE_RESPONSE = [
-    {
-        "url": "https://www.facebook.com/marketplace/item/1259177466401495",
-        "title": "2018 Mercedes-Benz C 300 Convertible 27k miles",
-        "initial_price": 35995,
-        "final_price": 35995,
-        "currency": "USD",
-        "product_id": "1259177466401495",
-        "condition": "USED",
-        "description": "1 owner, 2.0 turbo all wheel drive, leather seating pkg.",
-        "location": "Knoxville, TN",
-        "country_code": "US",
-        "images": ["https://img.example.com/1.jpg"],
-        "seller_description": "1 owner, 2.0 turbo.",
-        "color": "grey",
-        "brand": None,
-        "videos": None,
-        "profile_id": "34591790377134943",
-        "listing_date": "2026-04-02T11:25:00.000Z",
-    }
-]
+ITEM_A_URL = "https://www.facebook.com/marketplace/item/1470792311455307/"
+ITEM_B_URL = "https://www.facebook.com/marketplace/item/3970017683303389/"
 
+# Shape confirmed by direct calls against the live API (not docs — see the
+# module docstring for why those were wrong). Response is NDJSON, one object
+# per line, in no guaranteed order.
+RAW_ITEM_A = {
+    "url": ITEM_A_URL,
+    "title": "1995 Ford F-150 · XLT Pickup 2D 6 1/2 ft",
+    "initial_price": 6000,
+    "final_price": 6000,
+    "currency": "USD",
+    "product_id": "1470792311455307",
+    "condition": "USED",
+    "description": "Runs and drives but needs alternator and power steering.",
+    "location": "Austin, TX",
+    "images": ["https://img.example.com/1.jpg"],
+    "seller_description": "Runs and drives but needs alternator and power steering.",
+    "is_sold": False,
+    "car_miles": 250000,
+    "listing_date": "2026-07-25T01:11:12.000Z",
+    "input": {"url": ITEM_A_URL},
+}
 
-def _search_filter(db, **kwargs):
-    defaults = {"search_mode": "location", "location": "knoxville", "query": "mercedes"}
-    defaults.update(kwargs)
-    sf = SearchFilter(name="test", **defaults)
-    db.add(sf)
-    db.commit()
-    db.refresh(sf)
-    return sf
+ERROR_LINE = {
+    "timestamp": "2026-08-26T20:00:05.748Z",
+    "input": {"url": ITEM_B_URL},
+    "error": "Redirect to login page.",
+    "error_code": "bad_input",
+}
 
 
-def _config():
-    return AppSettings(bright_data_api_key="fake-token")
+def _ndjson(*objects) -> str:
+    return "\n".join(json.dumps(o) for o in objects)
 
 
 @respx.mock
-def test_fetch_listings_scrapes_and_normalizes(db):
+def test_fetch_details_normalizes_successful_items():
     route = respx.post("https://api.brightdata.com/datasets/v3/scrape").mock(
-        return_value=httpx.Response(200, json=SCRAPE_RESPONSE)
+        return_value=httpx.Response(200, text=_ndjson(RAW_ITEM_A))
     )
 
-    sf = _search_filter(db)
-    items = fetch_listings(db, sf, 10, _config())
+    results = fetch_details("fake-key", [ITEM_A_URL])
 
-    assert len(items) == 1
-    item = items[0]
-    assert item["fb_listing_id"] == "1259177466401495"
-    assert item["price_amount"] == 35995
-    assert item["make"] == "Mercedes-Benz"
-    assert item["mileage"] == 27000
-    assert item["photo_urls"] == ["https://img.example.com/1.jpg"]
-    assert item["location_text"] == "Knoxville, TN"
+    assert list(results.keys()) == [ITEM_A_URL]
+    detail = results[ITEM_A_URL]
+    assert detail["title"] == "1995 Ford F-150 · XLT Pickup 2D 6 1/2 ft"
+    assert detail["price_amount"] == 6000
+    assert detail["mileage"] == 250000
+    assert detail["is_sold"] is False
+    assert detail["photo_urls"] == ["https://img.example.com/1.jpg"]
 
     request = route.calls.last.request
     assert request.url.params["dataset_id"] == "gd_lvt9iwuh6fbcwmx1a"
     body = json.loads(request.content)
-    assert body["input"] == [{"url": "https://www.facebook.com/marketplace/knoxville/search/?query=mercedes"}]
-    assert body["limit_per_input"] == 10
+    assert body["input"] == [{"url": ITEM_A_URL}]
+    assert body["limit_per_input"] is None
 
 
 @respx.mock
-def test_fetch_listings_builds_url_from_url_mode_filter(db):
-    # Unlike ScrapeCreators, Bright Data's scraper takes a real Marketplace
-    # search URL as input, so it can consume search_mode="url" filters directly.
-    route = respx.post("https://api.brightdata.com/datasets/v3/scrape").mock(
-        return_value=httpx.Response(200, json=SCRAPE_RESPONSE)
+def test_fetch_details_omits_urls_that_error():
+    # Confirmed live: errors (bad input, or a transient issue like "Redirect to
+    # login page") come back as their own NDJSON line, not a raised exception.
+    respx.post("https://api.brightdata.com/datasets/v3/scrape").mock(
+        return_value=httpx.Response(200, text=_ndjson(RAW_ITEM_A, ERROR_LINE))
     )
 
-    sf = _search_filter(
-        db,
-        search_mode="url",
-        location=None,
-        query=None,
-        search_url="https://www.facebook.com/marketplace/austin/search/?query=truck",
+    results = fetch_details("fake-key", [ITEM_A_URL, ITEM_B_URL])
+
+    assert list(results.keys()) == [ITEM_A_URL]
+
+
+def test_fetch_details_returns_empty_without_making_a_request():
+    results = fetch_details("fake-key", [])
+    assert results == {}
+
+
+@respx.mock
+def test_enrich_listings_merges_detail_onto_primary_source_data():
+    respx.post("https://api.brightdata.com/datasets/v3/scrape").mock(
+        return_value=httpx.Response(200, text=_ndjson(RAW_ITEM_A))
     )
-    fetch_listings(db, sf, 10, _config())
 
-    body = json.loads(route.calls.last.request.content)
-    assert body["input"] == [{"url": "https://www.facebook.com/marketplace/austin/search/?query=truck"}]
+    items = [
+        {
+            "fb_listing_id": "1470792311455307",
+            "url": ITEM_A_URL,
+            "title": "old title",
+            "description": None,
+            "mileage": None,
+        }
+    ]
+
+    enriched = enrich_listings(items, "fake-key")
+
+    assert len(enriched) == 1
+    # fb_listing_id/url are preserved from the primary source, not overwritten.
+    assert enriched[0]["fb_listing_id"] == "1470792311455307"
+    assert enriched[0]["url"] == ITEM_A_URL
+    assert enriched[0]["title"] == "1995 Ford F-150 · XLT Pickup 2D 6 1/2 ft"
+    assert enriched[0]["mileage"] == 250000
 
 
-def test_fetch_listings_raises_without_api_key(db):
-    sf = _search_filter(db)
-    with pytest.raises(RuntimeError, match="API key"):
-        fetch_listings(db, sf, 10, AppSettings())
+@respx.mock
+def test_enrich_listings_keeps_primary_data_when_bright_data_has_no_detail():
+    respx.post("https://api.brightdata.com/datasets/v3/scrape").mock(
+        return_value=httpx.Response(200, text=_ndjson(ERROR_LINE))
+    )
+
+    items = [{"fb_listing_id": "x", "url": ITEM_B_URL, "title": "primary title"}]
+
+    enriched = enrich_listings(items, "fake-key")
+
+    assert enriched == items
+
+
+def test_enrich_listings_skips_the_api_call_for_an_empty_list():
+    assert enrich_listings([], "fake-key") == []

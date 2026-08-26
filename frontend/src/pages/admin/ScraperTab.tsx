@@ -4,13 +4,13 @@ import type { ScraperSettingsOut } from '../../api/types'
 
 const PROVIDER_LABELS: Record<string, string> = {
   apify: 'Apify',
-  bright_data: 'Bright Data',
   scrape_creators: 'ScrapeCreators',
 }
 
 export default function ScraperTab() {
   const [scraper, setScraper] = useState<ScraperSettingsOut | null>(null)
   const [provider, setProvider] = useState('')
+  const [enrichmentEnabled, setEnrichmentEnabled] = useState(false)
   const [keys, setKeys] = useState({ bright_data_api_key: '', scrape_creators_api_key: '' })
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -24,6 +24,7 @@ export default function ScraperTab() {
       const data = await fetchSettings()
       setScraper(data.scraper)
       setProvider(data.scraper.provider)
+      setEnrichmentEnabled(data.scraper.bright_data_enrichment_enabled)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load scraper settings')
@@ -34,7 +35,7 @@ export default function ScraperTab() {
     try {
       setIsSaving(true)
       setError(null)
-      const fields: Record<string, string> = { provider }
+      const fields: Record<string, string | boolean> = { provider, bright_data_enrichment_enabled: enrichmentEnabled }
       if (keys.bright_data_api_key) fields.bright_data_api_key = keys.bright_data_api_key
       if (keys.scrape_creators_api_key) fields.scrape_creators_api_key = keys.scrape_creators_api_key
 
@@ -66,33 +67,15 @@ export default function ScraperTab() {
               <option key={p} value={p}>{PROVIDER_LABELS[p] || p}</option>
             ))}
           </select>
+          <p className="help-text">Finds listings matching a filter's location, price range, and query.</p>
         </div>
 
-        {provider !== 'apify' && provider !== 'bright_data' && scraper.incompatible_filter_names.length > 0 && (
+        {provider !== 'apify' && scraper.incompatible_filter_names.length > 0 && (
           <div className="error-message">
-            These search filters use a pasted Facebook URL, which only Apify and Bright Data can
-            scrape, and won't run under {PROVIDER_LABELS[provider] || provider}: {scraper.incompatible_filter_names.join(', ')}
+            These search filters use a pasted Facebook URL, which only Apify can scrape, and won't
+            run under {PROVIDER_LABELS[provider] || provider}: {scraper.incompatible_filter_names.join(', ')}
           </div>
         )}
-
-        <h3>Bright Data</h3>
-        <p className="help-text">
-          Uses Bright Data's Facebook Marketplace Web Scraper API (5K free records/month, then
-          $1.5/1K) — not the paid Datasets marketplace. No dataset ID to configure; it's a fixed,
-          shared scraper.
-        </p>
-        <div className="config-item">
-          <label htmlFor="bright-data-key">
-            Bright Data API Key {scraper.bright_data_api_key_masked && <span className="masked-value">({scraper.bright_data_api_key_masked})</span>}
-          </label>
-          <input
-            id="bright-data-key"
-            type="password"
-            placeholder={scraper.bright_data_api_key_masked ? 'Unchanged' : 'Not set'}
-            value={keys.bright_data_api_key}
-            onChange={(e) => setKeys(prev => ({ ...prev, bright_data_api_key: e.target.value }))}
-          />
-        </div>
 
         <h3>ScrapeCreators</h3>
         <div className="config-item">
@@ -105,6 +88,37 @@ export default function ScraperTab() {
             placeholder={scraper.scrape_creators_api_key_masked ? 'Unchanged' : 'Not set'}
             value={keys.scrape_creators_api_key}
             onChange={(e) => setKeys(prev => ({ ...prev, scrape_creators_api_key: e.target.value }))}
+          />
+        </div>
+
+        <h3>Bright Data Detail Enrichment</h3>
+        <p className="help-text">
+          Bright Data's Facebook Marketplace scraper can't search or discover listings — it only
+          fetches full detail for a listing URL you already have. It can't replace the active
+          provider above, but can optionally re-fetch richer detail for each listing that provider
+          finds. Uses Bright Data's Web Scraper API (5K free records/month, then $1.5/1K) — not the
+          paid Datasets marketplace. No dataset ID to configure; it's a fixed, shared scraper.
+        </p>
+        <div className="config-item">
+          <label>
+            <input
+              type="checkbox"
+              checked={enrichmentEnabled}
+              onChange={(e) => setEnrichmentEnabled(e.target.checked)}
+            />
+            Enable detail enrichment
+          </label>
+        </div>
+        <div className="config-item">
+          <label htmlFor="bright-data-key">
+            Bright Data API Key {scraper.bright_data_api_key_masked && <span className="masked-value">({scraper.bright_data_api_key_masked})</span>}
+          </label>
+          <input
+            id="bright-data-key"
+            type="password"
+            placeholder={scraper.bright_data_api_key_masked ? 'Unchanged' : 'Not set'}
+            value={keys.bright_data_api_key}
+            onChange={(e) => setKeys(prev => ({ ...prev, bright_data_api_key: e.target.value }))}
           />
         </div>
 

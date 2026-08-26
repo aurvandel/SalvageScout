@@ -127,6 +127,7 @@ def _settings_out(db: Session, config) -> AppSettingsOut:
             provider=config.scraper_provider,
             available_providers=get_available_scraper_providers(),
             bright_data_api_key_masked=mask_secret(config.bright_data_api_key),
+            bright_data_enrichment_enabled=config.bright_data_enrichment_enabled,
             scrape_creators_api_key_masked=mask_secret(config.scrape_creators_api_key),
             incompatible_filter_names=_incompatible_filter_names(db, config.scraper_provider),
         ),
@@ -211,6 +212,8 @@ def update_scraper_settings(payload: ScraperSettingsIn, db: Session = Depends(ge
     config.scraper_provider = provider
     if "bright_data_api_key" in fields:
         config.bright_data_api_key = fields["bright_data_api_key"] or None
+    if "bright_data_enrichment_enabled" in fields:
+        config.bright_data_enrichment_enabled = fields["bright_data_enrichment_enabled"]
     if "scrape_creators_api_key" in fields:
         config.scrape_creators_api_key = fields["scrape_creators_api_key"] or None
 

@@ -112,6 +112,7 @@ export function updateApifySettings(fields: {
 export function updateScraperSettings(fields: {
   provider?: string
   bright_data_api_key?: string
+  bright_data_enrichment_enabled?: boolean
   scrape_creators_api_key?: string
 }): Promise<AppSettingsOut> {
   return request<AppSettingsOut>('/api/admin/settings/scraper', {
