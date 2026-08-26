@@ -82,6 +82,15 @@ export interface ApifySettingsOut {
   apify_token_masked: string | null
 }
 
+export interface ScraperSettingsOut {
+  provider: string
+  available_providers: string[]
+  bright_data_api_key_masked: string | null
+  bright_data_dataset_id: string | null
+  scrape_creators_api_key_masked: string | null
+  incompatible_filter_names: string[]
+}
+
 export interface NotificationSettingsOut {
   discord_enabled: boolean
   discord_webhook_url_masked: string | null
@@ -94,6 +103,7 @@ export interface NotificationSettingsOut {
 export interface AppSettingsOut {
   llm: LLMSettingsOut
   apify: ApifySettingsOut
+  scraper: ScraperSettingsOut
   notifications: NotificationSettingsOut
 }
 

@@ -26,7 +26,7 @@ describe("ApifyTab", () => {
   it("renders loaded settings after fetching", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       apify: { actor_id: "test-actor-123", apify_token_masked: "***token" },
-      llm: {} as any,
+      llm: {} as any, scraper: {} as any,
       notifications: {} as any,
     })
     render(<ApifyTab />)
@@ -37,7 +37,7 @@ describe("ApifyTab", () => {
   it("displays the masked token when present", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       apify: { actor_id: "test-actor-123", apify_token_masked: "(***token)" },
-      llm: {} as any,
+      llm: {} as any, scraper: {} as any,
       notifications: {} as any,
     })
     render(<ApifyTab />)
@@ -47,7 +47,7 @@ describe("ApifyTab", () => {
   it("does not display raw token values", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       apify: { actor_id: "test-actor-123", apify_token_masked: "(***token)" },
-      llm: {} as any,
+      llm: {} as any, scraper: {} as any,
       notifications: {} as any,
     })
     render(<ApifyTab />)
@@ -57,11 +57,11 @@ describe("ApifyTab", () => {
   it("calls updateApifySettings with correct payload when saving without token", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       apify: { actor_id: "test-actor-123", apify_token_masked: "(***token)" },
-      llm: {} as any, notifications: {} as any,
+      llm: {} as any, notifications: {} as any, scraper: {} as any,
     })
     vi.mocked(updateApifySettings).mockResolvedValue({
       apify: { actor_id: "new-actor-456", apify_token_masked: "(***token)" },
-      llm: {} as any, notifications: {} as any,
+      llm: {} as any, notifications: {} as any, scraper: {} as any,
     })
     const user = userEvent.setup()
     render(<ApifyTab />)
@@ -77,11 +77,11 @@ describe("ApifyTab", () => {
   it("calls updateApifySettings with token when provided", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       apify: { actor_id: "test-actor-123", apify_token_masked: null },
-      llm: {} as any, notifications: {} as any,
+      llm: {} as any, notifications: {} as any, scraper: {} as any,
     })
     vi.mocked(updateApifySettings).mockResolvedValue({
       apify: { actor_id: "test-actor-123", apify_token_masked: "(***token)" },
-      llm: {} as any, notifications: {} as any,
+      llm: {} as any, notifications: {} as any, scraper: {} as any,
     })
     const user = userEvent.setup()
     render(<ApifyTab />)
@@ -96,7 +96,7 @@ describe("ApifyTab", () => {
   it("displays error message when save fails", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       apify: { actor_id: "test-actor-123", apify_token_masked: "(***token)" },
-      llm: {} as any, notifications: {} as any,
+      llm: {} as any, notifications: {} as any, scraper: {} as any,
     })
     const errorMsg = "Save failed"
     vi.mocked(updateApifySettings).mockRejectedValue(new Error(errorMsg))
@@ -111,7 +111,7 @@ describe("ApifyTab", () => {
   it("disables save button while saving", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       apify: { actor_id: "test-actor-123", apify_token_masked: "(***token)" },
-      llm: {} as any, notifications: {} as any,
+      llm: {} as any, notifications: {} as any, scraper: {} as any,
     })
     let resolveUpdateApify: any
     const updatePromise = new Promise((resolve) => { resolveUpdateApify = resolve })
@@ -122,18 +122,18 @@ describe("ApifyTab", () => {
     const saveButton = screen.getByRole("button", { name: /save apify settings/i })
     await user.click(saveButton)
     await waitFor(() => { expect(saveButton).toBeDisabled() })
-    resolveUpdateApify({ apify: { actor_id: "test-actor-123", apify_token_masked: "(***token)" }, llm: {} as any, notifications: {} as any })
+    resolveUpdateApify({ apify: { actor_id: "test-actor-123", apify_token_masked: "(***token)" }, llm: {} as any, notifications: {} as any, scraper: {} as any })
     await waitFor(() => { expect(saveButton).not.toBeDisabled() })
   })
 
   it("clears token input after successful save", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       apify: { actor_id: "test-actor-123", apify_token_masked: null },
-      llm: {} as any, notifications: {} as any,
+      llm: {} as any, notifications: {} as any, scraper: {} as any,
     })
     vi.mocked(updateApifySettings).mockResolvedValue({
       apify: { actor_id: "test-actor-123", apify_token_masked: "(***token)" },
-      llm: {} as any, notifications: {} as any,
+      llm: {} as any, notifications: {} as any, scraper: {} as any,
     })
     const user = userEvent.setup()
     render(<ApifyTab />)

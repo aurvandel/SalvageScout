@@ -5,8 +5,10 @@ def test_get_settings_returns_all_groups(client):
     body = response.json()
     assert "llm" in body
     assert "apify" in body
+    assert "scraper" in body
     assert "notifications" in body
     assert body["llm"]["provider"] in body["llm"]["available_providers"]
+    assert body["scraper"]["provider"] in body["scraper"]["available_providers"]
 
 
 def test_patch_llm_settings_updates_provider_and_model(client):
@@ -55,6 +57,35 @@ def test_patch_apify_settings(client):
     body = response.json()["apify"]
     assert body["actor_id"] == "custom/actor"
     assert "1234" in body["apify_token_masked"]
+
+
+def test_patch_scraper_settings_switches_provider(client):
+    response = client.patch(
+        "/api/admin/settings/scraper",
+        json={"provider": "scrape_creators", "scrape_creators_api_key": "sc-fake-1234"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()["scraper"]
+    assert body["provider"] == "scrape_creators"
+    assert "1234" in body["scrape_creators_api_key_masked"]
+
+
+def test_patch_scraper_settings_rejects_unknown_provider(client):
+    response = client.patch("/api/admin/settings/scraper", json={"provider": "not-a-real-provider"})
+    assert response.status_code == 400
+
+
+def test_patch_scraper_settings_flags_incompatible_url_mode_filters(client):
+    client.post(
+        "/api/search-filters",
+        json={"name": "raw url filter", "search_mode": "url", "search_url": "https://example.com/search"},
+    )
+
+    response = client.patch("/api/admin/settings/scraper", json={"provider": "bright_data"})
+
+    assert response.status_code == 200
+    assert "raw url filter" in response.json()["scraper"]["incompatible_filter_names"]
 
 
 def test_patch_notification_settings_toggles_channels(client):

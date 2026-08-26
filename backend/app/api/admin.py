@@ -17,6 +17,8 @@ from app.schemas.app_settings import (
     LLMSettingsOut,
     NotificationSettingsIn,
     NotificationSettingsOut,
+    ScraperSettingsIn,
+    ScraperSettingsOut,
     mask_secret,
 )
 from app.schemas.usage import ApifyUsageOut, LLMProviderUsageOut, UsageOut
@@ -24,6 +26,7 @@ from app.pipeline import run_pipeline_for_filter
 from app.scorer.pricing import estimate_cost_usd
 from app.scorer.registry import get_available_providers, get_available_models, get_scorer
 from app.scraper.apify_client import get_account_usage
+from app.scraper.registry import get_available_scraper_providers, supports_search_mode
 from app.settings_service import get_api_key_for_provider, get_app_settings
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -99,7 +102,12 @@ def trigger_search(background_tasks: BackgroundTasks, db: Session = Depends(get_
     return TriggerSearchResponse(message=f"Search started for {len(active_filters)} filter(s)")
 
 
-def _settings_out(config) -> AppSettingsOut:
+def _incompatible_filter_names(db: Session, provider: str) -> list[str]:
+    active_filters = db.query(SearchFilter).filter_by(is_active=True).all()
+    return [f.name for f in active_filters if not supports_search_mode(provider, f.search_mode)]
+
+
+def _settings_out(db: Session, config) -> AppSettingsOut:
     providers = get_available_providers()
     return AppSettingsOut(
         llm=LLMSettingsOut(
@@ -115,6 +123,14 @@ def _settings_out(config) -> AppSettingsOut:
             apify_token_masked=mask_secret(config.apify_token),
             actor_id=config.apify_actor_id,
         ),
+        scraper=ScraperSettingsOut(
+            provider=config.scraper_provider,
+            available_providers=get_available_scraper_providers(),
+            bright_data_api_key_masked=mask_secret(config.bright_data_api_key),
+            bright_data_dataset_id=config.bright_data_dataset_id,
+            scrape_creators_api_key_masked=mask_secret(config.scrape_creators_api_key),
+            incompatible_filter_names=_incompatible_filter_names(db, config.scraper_provider),
+        ),
         notifications=NotificationSettingsOut(
             discord_enabled=config.discord_enabled,
             discord_webhook_url_masked=mask_secret(config.discord_webhook_url),
@@ -129,7 +145,7 @@ def _settings_out(config) -> AppSettingsOut:
 @router.get("/settings", response_model=AppSettingsOut)
 def get_settings(db: Session = Depends(get_db)):
     config = get_app_settings(db)
-    return _settings_out(config)
+    return _settings_out(db, config)
 
 
 @router.patch("/settings/llm", response_model=AppSettingsOut)
@@ -163,7 +179,7 @@ def update_llm_settings(payload: LLMSettingsIn, db: Session = Depends(get_db)):
 
     db.commit()
     db.refresh(config)
-    return _settings_out(config)
+    return _settings_out(db, config)
 
 
 @router.patch("/settings/apify", response_model=AppSettingsOut)
@@ -178,7 +194,32 @@ def update_apify_settings(payload: ApifySettingsIn, db: Session = Depends(get_db
 
     db.commit()
     db.refresh(config)
-    return _settings_out(config)
+    return _settings_out(db, config)
+
+
+@router.patch("/settings/scraper", response_model=AppSettingsOut)
+def update_scraper_settings(payload: ScraperSettingsIn, db: Session = Depends(get_db)):
+    config = get_app_settings(db)
+    fields = payload.model_dump(exclude_unset=True)
+
+    provider = fields.get("provider", config.scraper_provider)
+    available_providers = get_available_scraper_providers()
+    if provider not in available_providers:
+        raise HTTPException(
+            status_code=400, detail=f"Unknown scraper provider {provider!r}. Available: {available_providers}"
+        )
+
+    config.scraper_provider = provider
+    if "bright_data_api_key" in fields:
+        config.bright_data_api_key = fields["bright_data_api_key"] or None
+    if "bright_data_dataset_id" in fields:
+        config.bright_data_dataset_id = fields["bright_data_dataset_id"] or None
+    if "scrape_creators_api_key" in fields:
+        config.scrape_creators_api_key = fields["scrape_creators_api_key"] or None
+
+    db.commit()
+    db.refresh(config)
+    return _settings_out(db, config)
 
 
 @router.patch("/settings/notifications", response_model=AppSettingsOut)
@@ -201,7 +242,7 @@ def update_notification_settings(payload: NotificationSettingsIn, db: Session = 
 
     db.commit()
     db.refresh(config)
-    return _settings_out(config)
+    return _settings_out(db, config)
 
 
 @router.post("/arena-run", response_model=ArenaRunOut)

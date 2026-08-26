@@ -1,6 +1,6 @@
 import pytest
 
-from app.scraper.parser import parse_mileage, parse_vehicle_specs, parse_year_make_model
+from app.scraper.parser import parse_mileage, parse_mileage_from_text, parse_vehicle_specs, parse_year_make_model
 
 
 @pytest.mark.parametrize(
@@ -70,3 +70,37 @@ def test_parse_vehicle_specs_combines_both():
 def test_parse_vehicle_specs_missing_data():
     specs = parse_vehicle_specs("", None)
     assert specs == {"year": None, "make": None, "model": None, "mileage": None}
+
+
+# Bright Data / ScrapeCreators titles have no separate subtitle field — mileage
+# rides inline in the title itself, e.g. "2018 Mercedes-Benz C 300 Convertible 27k miles".
+
+
+def test_parse_year_make_model_strips_inline_mileage():
+    year, make, model = parse_year_make_model("2018 Mercedes-Benz C 300 Convertible 27k miles")
+    assert (year, make) == (2018, "Mercedes-Benz")
+    assert "miles" not in model.lower()
+
+
+def test_parse_mileage_falls_back_to_title_when_no_subtitles():
+    assert parse_mileage(None, "2018 Mercedes-Benz C 300 Convertible 27k miles") == 27000
+    assert parse_mileage([], "2018 Mercedes-Benz C 300 Convertible 27k miles") == 27000
+
+
+def test_parse_mileage_prefers_subtitle_over_title():
+    assert parse_mileage([{"subtitle": "215K miles"}], "2003 Ford Crown Victoria 999k miles") == 215000
+
+
+def test_parse_mileage_from_text_variants():
+    assert parse_mileage_from_text("27k miles") == 27000
+    assert parse_mileage_from_text("128,000 miles") == 128000
+    assert parse_mileage_from_text(None) is None
+    assert parse_mileage_from_text("no mileage here") is None
+
+
+def test_parse_vehicle_specs_inline_mileage_title():
+    specs = parse_vehicle_specs("2018 Mercedes-Benz C 300 Convertible 27k miles", None)
+    assert specs["year"] == 2018
+    assert specs["make"] == "Mercedes-Benz"
+    assert specs["mileage"] == 27000
+    assert "miles" not in specs["model"].lower()

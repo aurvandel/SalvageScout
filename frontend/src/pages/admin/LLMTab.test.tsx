@@ -25,6 +25,7 @@ const mockLLMSettings = {
     actor_id: 'actor-1',
     apify_token_masked: null,
   },
+  scraper: {} as any,
   notifications: {
     discord_enabled: false,
     discord_webhook_url_masked: null,

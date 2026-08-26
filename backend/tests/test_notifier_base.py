@@ -11,7 +11,7 @@ def _listing(**overrides):
         year=2014,
         make="Chevrolet",
         model="Impala",
-        raw_apify_data={},
+        raw_scraper_data={},
     )
     defaults.update(overrides)
     return Listing(**defaults)

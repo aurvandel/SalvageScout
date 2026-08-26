@@ -37,6 +37,14 @@ const mockSettings: AppSettingsOut = {
     gemini_api_key_masked: null,
   },
   apify: { actor_id: '123', apify_token_masked: '***token***' },
+  scraper: {
+    provider: 'apify',
+    available_providers: ['apify', 'bright_data', 'scrape_creators'],
+    bright_data_api_key_masked: null,
+    bright_data_dataset_id: null,
+    scrape_creators_api_key_masked: null,
+    incompatible_filter_names: [],
+  },
   notifications: {
     discord_enabled: false,
     discord_webhook_url_masked: null,
@@ -295,6 +303,19 @@ describe('HTTP methods, headers, and bodies', () => {
     await client.updateApifySettings(payload)
 
     expect(mockFetch).toHaveBeenCalledWith('/api/admin/settings/apify', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+  })
+
+  it('updateScraperSettings issues PATCH with JSON headers and serialized body', async () => {
+    mockFetch.mockResolvedValue(jsonResponse(mockSettings))
+
+    const payload = { provider: 'scrape_creators' }
+    await client.updateScraperSettings(payload)
+
+    expect(mockFetch).toHaveBeenCalledWith('/api/admin/settings/scraper', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -604,6 +625,18 @@ describe('successful responses resolve with parsed JSON', () => {
     const result = await client.updateApifySettings({ actor_id: '456' })
 
     expect(result.apify.actor_id).toBe('456')
+  })
+
+  it('updateScraperSettings resolves with the parsed settings', async () => {
+    const updated: AppSettingsOut = {
+      ...mockSettings,
+      scraper: { ...mockSettings.scraper, provider: 'scrape_creators' },
+    }
+    mockFetch.mockResolvedValue(jsonResponse(updated))
+
+    const result = await client.updateScraperSettings({ provider: 'scrape_creators' })
+
+    expect(result.scraper.provider).toBe('scrape_creators')
   })
 
   it('updateNotificationSettings resolves with the parsed settings', async () => {

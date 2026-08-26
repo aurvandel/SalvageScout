@@ -26,7 +26,7 @@ describe("NotificationsTab", () => {
   it("renders loaded notification settings", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       notifications: { discord_enabled: true, discord_webhook_url_masked: "(***webhook)", telegram_enabled: true, telegram_bot_token_masked: "(***token)", telegram_chat_id: "12345", notification_score_threshold: 75 },
-      apify: {} as any, llm: {} as any,
+      apify: {} as any, llm: {} as any, scraper: {} as any,
     })
     render(<NotificationsTab />)
     await waitFor(() => { expect(screen.queryByText("Loading...")).not.toBeInTheDocument() })
@@ -36,7 +36,7 @@ describe("NotificationsTab", () => {
   it("displays masked webhook URL correctly", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       notifications: { discord_enabled: true, discord_webhook_url_masked: "(***webhook123)", telegram_enabled: false, telegram_bot_token_masked: null, telegram_chat_id: null, notification_score_threshold: 70 },
-      apify: {} as any, llm: {} as any,
+      apify: {} as any, llm: {} as any, scraper: {} as any,
     })
     render(<NotificationsTab />)
     await waitFor(() => { expect(screen.getByText(/\(\*\*\*webhook123\)/)).toBeInTheDocument() })
@@ -45,7 +45,7 @@ describe("NotificationsTab", () => {
   it("displays masked bot token correctly", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       notifications: { discord_enabled: false, discord_webhook_url_masked: null, telegram_enabled: true, telegram_bot_token_masked: "(***bottoken456)", telegram_chat_id: "67890", notification_score_threshold: 80 },
-      apify: {} as any, llm: {} as any,
+      apify: {} as any, llm: {} as any, scraper: {} as any,
     })
     render(<NotificationsTab />)
     await waitFor(() => { expect(screen.getByText(/\(\*\*\*bottoken456\)/)).toBeInTheDocument() })
@@ -54,11 +54,11 @@ describe("NotificationsTab", () => {
   it("calls updateNotificationSettings with correct payload", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       notifications: { discord_enabled: false, discord_webhook_url_masked: null, telegram_enabled: false, telegram_bot_token_masked: null, telegram_chat_id: null, notification_score_threshold: 70 },
-      apify: {} as any, llm: {} as any,
+      apify: {} as any, llm: {} as any, scraper: {} as any,
     })
     vi.mocked(updateNotificationSettings).mockResolvedValue({
       notifications: { discord_enabled: true, discord_webhook_url_masked: "(***webhook)", telegram_enabled: true, telegram_bot_token_masked: "(***token)", telegram_chat_id: "12345", notification_score_threshold: 80 },
-      apify: {} as any, llm: {} as any,
+      apify: {} as any, llm: {} as any, scraper: {} as any,
     })
     const user = userEvent.setup()
     render(<NotificationsTab />)
@@ -76,7 +76,7 @@ describe("NotificationsTab", () => {
   it("displays error message when save fails", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       notifications: { discord_enabled: false, discord_webhook_url_masked: null, telegram_enabled: false, telegram_bot_token_masked: null, telegram_chat_id: null, notification_score_threshold: 70 },
-      apify: {} as any, llm: {} as any,
+      apify: {} as any, llm: {} as any, scraper: {} as any,
     })
     const errorMsg = "Failed to update notification settings"
     vi.mocked(updateNotificationSettings).mockRejectedValue(new Error(errorMsg))
@@ -90,11 +90,11 @@ describe("NotificationsTab", () => {
   it("clears webhook input after successful save", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       notifications: { discord_enabled: false, discord_webhook_url_masked: null, telegram_enabled: false, telegram_bot_token_masked: null, telegram_chat_id: null, notification_score_threshold: 70 },
-      apify: {} as any, llm: {} as any,
+      apify: {} as any, llm: {} as any, scraper: {} as any,
     })
     vi.mocked(updateNotificationSettings).mockResolvedValue({
       notifications: { discord_enabled: true, discord_webhook_url_masked: "(***webhook)", telegram_enabled: false, telegram_bot_token_masked: null, telegram_chat_id: null, notification_score_threshold: 70 },
-      apify: {} as any, llm: {} as any,
+      apify: {} as any, llm: {} as any, scraper: {} as any,
     })
     const user = userEvent.setup()
     render(<NotificationsTab />)
