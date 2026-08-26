@@ -166,6 +166,21 @@ export interface ApifyUsageOut {
   error: string | null
 }
 
+export interface ScrapeCreatorsUsageOut {
+  configured: boolean
+  credits_remaining: number | null
+  credits_used_today: number | null
+  requests_today: number | null
+  error: string | null
+}
+
+export interface BrightDataUsageOut {
+  configured: boolean
+  balance_usd: number | null
+  pending_balance_usd: number | null
+  error: string | null
+}
+
 export interface LLMProviderUsageOut {
   provider: string
   model: string
@@ -178,6 +193,8 @@ export interface LLMProviderUsageOut {
 
 export interface UsageOut {
   apify: ApifyUsageOut
+  scrape_creators: ScrapeCreatorsUsageOut
+  bright_data: BrightDataUsageOut
   llm_this_month: LLMProviderUsageOut[]
   llm_all_time: LLMProviderUsageOut[]
 }

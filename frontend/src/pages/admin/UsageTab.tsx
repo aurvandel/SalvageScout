@@ -78,6 +78,47 @@ export default function UsageTab() {
       </div>
 
       <div className="admin-section">
+        <h2>ScrapeCreators</h2>
+        {!usage.scrape_creators.configured && (
+          <p className="help-text">No ScrapeCreators API key configured — set one in the Scraper tab.</p>
+        )}
+        {usage.scrape_creators.error && (
+          <div className="error-message">Couldn't reach ScrapeCreators: {usage.scrape_creators.error}</div>
+        )}
+        {usage.scrape_creators.configured && !usage.scrape_creators.error && (
+          <div className="settings-form">
+            <div className="usage-summary">
+              <span>{usage.scrape_creators.credits_remaining ?? '—'} credits remaining</span>
+            </div>
+            <p className="help-text">
+              {usage.scrape_creators.credits_used_today != null
+                ? `${usage.scrape_creators.credits_used_today} credits used today (${usage.scrape_creators.requests_today} requests)`
+                : "Today's usage unavailable"}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="admin-section">
+        <h2>Bright Data</h2>
+        {!usage.bright_data.configured && (
+          <p className="help-text">No Bright Data API key configured — set one in the Scraper tab.</p>
+        )}
+        {usage.bright_data.error && (
+          <div className="error-message">Couldn't reach Bright Data: {usage.bright_data.error}</div>
+        )}
+        {usage.bright_data.configured && !usage.bright_data.error && (
+          <div className="settings-form">
+            <div className="usage-summary">
+              <span>{formatUsd(usage.bright_data.balance_usd)} balance</span>
+              <span className="usage-summary-sep">/</span>
+              <span>{formatUsd(usage.bright_data.pending_balance_usd)} pending next cycle</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="admin-section">
         <h2>LLM Spend (Estimated)</h2>
         <p className="help-text">
           No provider exposes a real credit-balance API, so this is an estimate from tokens used × published pricing —

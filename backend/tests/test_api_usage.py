@@ -77,6 +77,77 @@ def test_get_usage_apify_reports_error_without_failing_request(client, mocker):
     assert response.json()["apify"]["error"] == "boom"
 
 
+def test_get_usage_scrape_creators_not_configured(client, db):
+    response = client.get("/api/admin/usage")
+
+    assert response.status_code == 200
+    body = response.json()["scrape_creators"]
+    assert body["configured"] is False
+    assert body["credits_remaining"] is None
+
+
+def test_get_usage_scrape_creators_configured_calls_client(client, mocker):
+    client.patch("/api/admin/settings/scraper", json={"scrape_creators_api_key": "fake-key"})
+    mocker.patch(
+        "app.api.admin.get_scrape_creators_usage",
+        return_value={"credits_remaining": 97, "credits_used_today": 3, "requests_today": 3},
+    )
+
+    response = client.get("/api/admin/usage")
+
+    assert response.status_code == 200
+    body = response.json()["scrape_creators"]
+    assert body["configured"] is True
+    assert body["credits_remaining"] == 97
+    assert body["credits_used_today"] == 3
+    assert body["requests_today"] == 3
+
+
+def test_get_usage_scrape_creators_reports_error_without_failing_request(client, mocker):
+    client.patch("/api/admin/settings/scraper", json={"scrape_creators_api_key": "fake-key"})
+    mocker.patch("app.api.admin.get_scrape_creators_usage", side_effect=RuntimeError("boom"))
+
+    response = client.get("/api/admin/usage")
+
+    assert response.status_code == 200
+    assert response.json()["scrape_creators"]["error"] == "boom"
+
+
+def test_get_usage_bright_data_not_configured(client, db):
+    response = client.get("/api/admin/usage")
+
+    assert response.status_code == 200
+    body = response.json()["bright_data"]
+    assert body["configured"] is False
+    assert body["balance_usd"] is None
+
+
+def test_get_usage_bright_data_configured_calls_client(client, mocker):
+    client.patch("/api/admin/settings/scraper", json={"bright_data_api_key": "fake-key"})
+    mocker.patch(
+        "app.api.admin.get_bright_data_usage",
+        return_value={"balance_usd": 42.5, "pending_balance_usd": 1.25},
+    )
+
+    response = client.get("/api/admin/usage")
+
+    assert response.status_code == 200
+    body = response.json()["bright_data"]
+    assert body["configured"] is True
+    assert body["balance_usd"] == 42.5
+    assert body["pending_balance_usd"] == 1.25
+
+
+def test_get_usage_bright_data_reports_error_without_failing_request(client, mocker):
+    client.patch("/api/admin/settings/scraper", json={"bright_data_api_key": "fake-key"})
+    mocker.patch("app.api.admin.get_bright_data_usage", side_effect=RuntimeError("boom"))
+
+    response = client.get("/api/admin/usage")
+
+    assert response.status_code == 200
+    assert response.json()["bright_data"]["error"] == "boom"
+
+
 def test_get_usage_aggregates_llm_spend_by_model(client, db):
     _seed_score(db, model_used="anthropic/claude-haiku-4-5", input_tokens=1_000_000, output_tokens=1_000_000)
 

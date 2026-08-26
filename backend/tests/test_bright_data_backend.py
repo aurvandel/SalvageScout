@@ -1,9 +1,10 @@
 import json
 
 import httpx
+import pytest
 import respx
 
-from app.scraper.bright_data_backend import enrich_listings, fetch_details
+from app.scraper.bright_data_backend import enrich_listings, fetch_details, get_account_usage
 
 ITEM_A_URL = "https://www.facebook.com/marketplace/item/1470792311455307/"
 ITEM_B_URL = "https://www.facebook.com/marketplace/item/3970017683303389/"
@@ -165,3 +166,27 @@ def test_enrich_listings_never_overwrites_identity_fields(monkeypatch):
     assert enriched[0]["fb_listing_id"] == "correct-id"
     assert enriched[0]["url"] == ITEM_A_URL
     assert enriched[0]["title"] == "new title"
+
+
+@respx.mock
+def test_get_account_usage_returns_balance_and_pending():
+    respx.get("https://api.brightdata.com/customer/balance").mock(
+        return_value=httpx.Response(200, json={"balance": 42.5, "pending_balance": 1.25})
+    )
+
+    result = get_account_usage("fake-key")
+
+    assert result == {"balance_usd": 42.5, "pending_balance_usd": 1.25}
+
+
+@respx.mock
+def test_get_account_usage_includes_response_body_in_error():
+    """A scoped API key gets a 403 whose body names the fix (change token
+    permissions) — confirmed live. raise_for_status() would discard that body
+    behind a bare "403 Forbidden", so the error message must carry it."""
+    respx.get("https://api.brightdata.com/customer/balance").mock(
+        return_value=httpx.Response(403, text="Your API key lacks the required permissions for this action.")
+    )
+
+    with pytest.raises(RuntimeError, match="lacks the required permissions"):
+        get_account_usage("fake-key")
