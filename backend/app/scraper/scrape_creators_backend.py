@@ -19,13 +19,17 @@ MILES_TO_KM = 1.60934
 _VALID_CONDITIONS = {"new", "used_like_new", "used_good", "used_fair"}
 
 # Same story for these — confirmed via live calls against the REST endpoint
-# itself (not just its tool schema): sort_by=price_ascend actually reorders
-# results, and date_listed/delivery_method/availability are accepted without
-# error. sort_by/delivery_method/availability have no Apify equivalent so
-# they're only ever set when this provider is active. date_listed reuses the
-# shared days_listed column (a raw day count, matched to Apify's own
-# `daysSinceListed` URL param) but ScrapeCreators only accepts these three
-# bucketed values — anything else is dropped rather than guessed at.
+# itself (not just its tool schema): sort_by=price_ascend measurably reorders
+# results, and date_listed/delivery_method/availability each independently
+# narrow the result set on a fixed "bike" baseline without erroring or zeroing
+# it out (a combined all-four-params call did return zero once, but delivery
+# and availability each still returned normal counts alone, so that's a narrow
+# real combination, not an ignored/broken param). sort_by/delivery_method/
+# availability have no Apify equivalent so they're only ever set when this
+# provider is active. date_listed reuses the shared days_listed column (a raw
+# day count, matched to Apify's own `daysSinceListed` URL param) but
+# ScrapeCreators only accepts these three bucketed values — anything else is
+# dropped rather than guessed at.
 _VALID_SORT_BY = {"suggested", "distance_ascend", "creation_time_descend", "price_ascend", "price_descend"}
 _VALID_DELIVERY_METHODS = {"all", "local_pickup", "shipping"}
 _VALID_AVAILABILITY = {"available", "sold", "all"}
