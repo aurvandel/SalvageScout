@@ -26,6 +26,8 @@ const mockSearchFilters = [
     sort_by: null,
     delivery_method: null,
     availability: null,
+    latitude: null,
+    longitude: null,
   },
   {
     id: 2,
@@ -45,6 +47,8 @@ const mockSearchFilters = [
     sort_by: null,
     delivery_method: null,
     availability: null,
+    latitude: null,
+    longitude: null,
   },
 ]
 
@@ -139,6 +143,8 @@ describe('SearchFiltersTab', () => {
       sort_by: null,
       delivery_method: null,
       availability: null,
+      latitude: null,
+      longitude: null,
     }
 
     vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce(mockSearchFilters)
@@ -181,6 +187,8 @@ describe('SearchFiltersTab', () => {
         sort_by: null,
         delivery_method: null,
         availability: null,
+        latitude: null,
+        longitude: null,
       })
     })
   })
@@ -204,6 +212,8 @@ describe('SearchFiltersTab', () => {
       sort_by: null,
       delivery_method: null,
       availability: null,
+      latitude: null,
+      longitude: null,
     }
 
     vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce(mockSearchFilters)
@@ -268,6 +278,8 @@ describe('SearchFiltersTab', () => {
         sort_by: null,
         delivery_method: null,
         availability: null,
+        latitude: null,
+        longitude: null,
       })
     })
   })
@@ -401,6 +413,141 @@ describe('SearchFiltersTab', () => {
     expect(screen.queryByLabelText('Availability')).not.toBeInTheDocument()
     expect((screen.getByLabelText('Condition') as HTMLInputElement).tagName).toBe('INPUT')
     expect((screen.getByLabelText('Days Listed') as HTMLInputElement).tagName).toBe('INPUT')
+    expect(screen.queryByLabelText('Latitude')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Longitude')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Use My Location/ })).not.toBeInTheDocument()
+  })
+
+  it('fills latitude/longitude from geolocation when "Use My Location" is clicked', async () => {
+    const getCurrentPosition = vi.fn((success: PositionCallback) => {
+      success({ coords: { latitude: 30.267153, longitude: -97.743057 } } as GeolocationPosition)
+    })
+    vi.stubGlobal('navigator', { ...navigator, geolocation: { getCurrentPosition } })
+
+    mockSettings('scrape_creators')
+    vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce([])
+
+    render(<SearchFiltersTab />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Name')).toBeInTheDocument()
+    })
+
+    const modeSelect = screen.getByLabelText('Search Mode') as HTMLSelectElement
+    await userEvent.selectOptions(modeSelect, 'location')
+
+    const useLocationButton = await screen.findByRole('button', { name: /Use My Location/ })
+    await userEvent.click(useLocationButton)
+
+    await waitFor(() => {
+      expect((screen.getByLabelText('Latitude') as HTMLInputElement).value).toBe('30.267153')
+      expect((screen.getByLabelText('Longitude') as HTMLInputElement).value).toBe('-97.743057')
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('shows an error when geolocation is denied', async () => {
+    const getCurrentPosition = vi.fn((_success: PositionCallback, error: PositionErrorCallback) => {
+      error({ code: 1, message: 'User denied Geolocation' } as GeolocationPositionError)
+    })
+    vi.stubGlobal('navigator', { ...navigator, geolocation: { getCurrentPosition } })
+
+    mockSettings('scrape_creators')
+    vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce([])
+
+    render(<SearchFiltersTab />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Name')).toBeInTheDocument()
+    })
+
+    const modeSelect = screen.getByLabelText('Search Mode') as HTMLSelectElement
+    await userEvent.selectOptions(modeSelect, 'location')
+
+    const useLocationButton = await screen.findByRole('button', { name: /Use My Location/ })
+    await userEvent.click(useLocationButton)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Couldn't get your location: User denied Geolocation/)).toBeInTheDocument()
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('shows an error when the browser has no geolocation support', async () => {
+    vi.stubGlobal('navigator', { ...navigator, geolocation: undefined })
+
+    mockSettings('scrape_creators')
+    vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce([])
+
+    render(<SearchFiltersTab />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Name')).toBeInTheDocument()
+    })
+
+    const modeSelect = screen.getByLabelText('Search Mode') as HTMLSelectElement
+    await userEvent.selectOptions(modeSelect, 'location')
+
+    const useLocationButton = await screen.findByRole('button', { name: /Use My Location/ })
+    await userEvent.click(useLocationButton)
+
+    await waitFor(() => {
+      expect(screen.getByText(/doesn't support geolocation/)).toBeInTheDocument()
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('sends latitude/longitude in the create payload for ScrapeCreators', async () => {
+    const createdFilter = {
+      id: 5,
+      name: 'Near Me',
+      is_active: true,
+      search_mode: 'location' as const,
+      search_url: null,
+      location: null,
+      query: null,
+      min_price: null,
+      max_price: null,
+      radius_miles: null,
+      days_listed: null,
+      condition: null,
+      results_limit: 100,
+      criteria_profile_id: null,
+      sort_by: null,
+      delivery_method: null,
+      availability: null,
+      latitude: 30.267153,
+      longitude: -97.743057,
+    }
+    mockSettings('scrape_creators')
+    vi.mocked(client.fetchSearchFilters)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([createdFilter])
+    vi.mocked(client.createSearchFilter).mockResolvedValueOnce(createdFilter)
+
+    render(<SearchFiltersTab />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Name')).toBeInTheDocument()
+    })
+
+    await userEvent.type(screen.getByLabelText('Name'), 'Near Me')
+    await userEvent.selectOptions(screen.getByLabelText('Search Mode'), 'location')
+
+    const latInput = await screen.findByLabelText('Latitude')
+    await userEvent.type(latInput, '30.267153')
+    await userEvent.type(screen.getByLabelText('Longitude'), '-97.743057')
+
+    await userEvent.click(screen.getByRole('button', { name: /Add Filter/ }))
+
+    await waitFor(() => {
+      const payload = vi.mocked(client.createSearchFilter).mock.calls[0][0]
+      expect(payload.latitude).toBe(30.267153)
+      expect(payload.longitude).toBe(-97.743057)
+    })
   })
 
   it('edits existing filter', async () => {
@@ -550,6 +697,8 @@ describe('SearchFiltersTab', () => {
       sort_by: null,
       delivery_method: null,
       availability: null,
+      latitude: null,
+      longitude: null,
     }
 
     vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce(mockSearchFilters)

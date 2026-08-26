@@ -73,6 +73,8 @@ const mockSearchFilter: SearchFilterOut = {
   sort_by: null,
   delivery_method: null,
   availability: null,
+  latitude: null,
+  longitude: null,
 }
 
 const mockCriteriaProfile: CriteriaProfileOut = {

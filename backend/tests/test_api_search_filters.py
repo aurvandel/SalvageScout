@@ -67,6 +67,29 @@ def test_create_location_mode_without_location_rejected(client):
     assert response.status_code == 422
 
 
+def test_create_location_mode_with_lat_lng_but_no_location_text_allowed(client):
+    # A "use my location" button fills lat/lng directly (see scrape_creators_backend's
+    # geocode-cache short-circuit) — location text is only needed as a fallback
+    # for geocoding, so it shouldn't be required when coordinates are already set.
+    response = client.post(
+        "/api/search-filters",
+        json={"name": "near me", "search_mode": "location", "latitude": 30.2677, "longitude": -97.7475},
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["latitude"] == 30.2677
+    assert body["longitude"] == -97.7475
+    assert body["location"] is None
+
+
+def test_create_location_mode_without_location_or_coordinates_rejected(client):
+    response = client.post(
+        "/api/search-filters", json={"name": "x", "search_mode": "location", "latitude": 30.2677}
+    )
+    assert response.status_code == 422
+
+
 def test_delete_search_filter(client):
     created = client.post(
         "/api/search-filters", json={"name": "to delete", "search_url": "https://example.com/1"}

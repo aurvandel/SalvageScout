@@ -125,6 +125,8 @@ export interface SearchFilterOut {
   sort_by: string | null
   delivery_method: string | null
   availability: string | null
+  latitude: number | null
+  longitude: number | null
 }
 
 export interface CriteriaProfileIn {
