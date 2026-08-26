@@ -641,3 +641,73 @@
 .usage-subheading:first-of-type {
   margin-top: 0;
 }
+
+@media (max-width: 640px) {
+  .admin-panel {
+    padding: 16px 12px 48px;
+  }
+
+  .admin-panel h1 {
+    font-size: 1.6rem;
+    margin-bottom: 16px;
+  }
+
+  .admin-section {
+    padding: 16px;
+  }
+
+  .tab-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .tab-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-button {
+    flex: 0 0 auto;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+  }
+
+  .results-grid,
+  .arena-comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-row,
+  .profile-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-row-actions,
+  .profile-row-actions {
+    justify-content: flex-end;
+  }
+
+  .settings-form .config-item select,
+  .settings-form .config-item input[type="text"],
+  .settings-form .config-item input[type="password"],
+  .settings-form .config-item input[type="number"] {
+    max-width: 100%;
+  }
+
+  .time-input {
+    margin-right: 12px;
+  }
+
+  .time-input input,
+  .arena-provider-row select {
+    font-size: 16px;
+  }
+
+  .edit-button,
+  .delete-button,
+  .activate-button {
+    padding: 8px 14px;
+  }
+}

@@ -104,3 +104,19 @@
   padding: 3px 10px;
   font-size: 13px;
 }
+
+@media (max-width: 640px) {
+  .map-view {
+    height: calc(100vh - 110px);
+    height: calc(100dvh - 110px);
+    gap: 10px;
+  }
+
+  .map-container {
+    min-height: 320px;
+  }
+
+  .map-popup {
+    width: 160px;
+  }
+}

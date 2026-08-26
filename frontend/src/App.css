@@ -55,3 +55,23 @@
 .main-content {
   flex: 1;
 }
+
+@media (max-width: 640px) {
+  .navbar {
+    margin: 8px 8px 4px;
+    padding: 10px 14px;
+  }
+
+  .nav-brand a {
+    font-size: 1.15rem;
+  }
+
+  .nav-links {
+    gap: 2px;
+  }
+
+  .nav-links a {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+}
