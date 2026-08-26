@@ -5,7 +5,7 @@ from pydantic import TypeAdapter
 
 from app.models import CriteriaProfile, Listing
 from app.scorer.base import build_listing_text
-from app.scorer.schemas import ScoreResult
+from app.scorer.schemas import ScoreResult, TokenUsage
 
 AVAILABLE_MODELS = ["gpt-4-turbo", "gpt-4o", "gpt-4o-mini"]
 DEFAULT_MODEL = "gpt-4o-mini"
@@ -13,7 +13,7 @@ DEFAULT_MODEL = "gpt-4o-mini"
 
 def score_listing(
     listing: Listing, criteria_profile: CriteriaProfile, model: str = DEFAULT_MODEL, api_key: str | None = None
-) -> ScoreResult:
+) -> tuple[ScoreResult, TokenUsage]:
     if model not in AVAILABLE_MODELS:
         raise ValueError(f"Unknown OpenAI model: {model}. Available: {AVAILABLE_MODELS}")
     if not api_key:
@@ -42,4 +42,8 @@ def score_listing(
     )
 
     result_json = json.loads(response.choices[0].message.content)
-    return ScoreResult(**result_json)
+    usage = TokenUsage(
+        input_tokens=response.usage.prompt_tokens,
+        output_tokens=response.usage.completion_tokens,
+    )
+    return ScoreResult(**result_json), usage

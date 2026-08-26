@@ -3,6 +3,13 @@
     "apify": {
       "type": "http",
       "url": "https://mcp.apify.com/?tools=docs,apify/facebook-marketplace-scraper"
+    }, 
+    "scrape-creators": {
+        "url": "https://api.scrapecreators.com/mcp"
+      },
+    "BrightData": {
+      "type": "http",
+      "url": "https://mcp.brightdata.com/mcp?token=${BRIGHTDATA_API}"
     }
   }
 }
