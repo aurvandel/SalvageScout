@@ -78,6 +78,10 @@ export default function ScraperTab() {
         )}
 
         <h3>Bright Data</h3>
+        <p className="help-text">
+          Unverified: the request/response shape below is based on secondhand documentation, not a
+          live call against a real dataset. Confirm it works before relying on it for real runs.
+        </p>
         <div className="config-item">
           <label htmlFor="bright-data-key">
             Bright Data API Key {scraper.bright_data_api_key_masked && <span className="masked-value">({scraper.bright_data_api_key_masked})</span>}

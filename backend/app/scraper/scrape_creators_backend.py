@@ -10,6 +10,13 @@ from app.scraper.parser import parse_vehicle_specs
 BASE_URL = "https://api.scrapecreators.com/v1/facebook/marketplace"
 MILES_TO_KM = 1.60934
 
+# SearchFilter.condition is free text shared across providers (the admin UI's
+# placeholder is "used", matching Apify's own convention) but ScrapeCreators'
+# search endpoint only accepts this fixed enum — confirmed against its live
+# tool schema. Sending anything else risks a 400 or a silently-ignored filter,
+# so only forward values that match; anything else is dropped rather than sent.
+_VALID_CONDITIONS = {"new", "used_like_new", "used_good", "used_fair"}
+
 
 def _headers(api_key: str) -> dict[str, str]:
     return {"x-api-key": api_key}
@@ -63,8 +70,8 @@ def _search(
         params["min_price"] = search_filter.min_price
     if search_filter.max_price is not None:
         params["max_price"] = search_filter.max_price
-    if search_filter.condition:
-        params["condition"] = search_filter.condition
+    if search_filter.condition and search_filter.condition.lower() in _VALID_CONDITIONS:
+        params["condition"] = search_filter.condition.lower()
 
     # Single page only — daily volumes at this project's scale (tens of results
     # per filter) fit in one page; a `has_next_page`/`cursor` follow-up loop can
@@ -110,6 +117,12 @@ def _normalize(item: dict[str, Any], detail: dict[str, Any] | None) -> dict[str,
     location = detail.get("location") if detail else None
     location_text_source = detail.get("location_text") if detail else (item.get("location") or {}).get("display_name")
 
+    # strikethrough_price.amount comes back as a numeric string ("3000.00")
+    # while price.amount is a plain int — confirmed on a live search response.
+    # Coerce explicitly since the column is Numeric, not Float.
+    strikethrough_amount = ((detail or item).get("strikethrough_price") or {}).get("amount")
+    strikethrough_amount = float(strikethrough_amount) if strikethrough_amount is not None else None
+
     photos = (detail or {}).get("photos") or []
     photo_urls = [p["url"] for p in photos if p.get("url")]
     if not photo_urls and item.get("primary_photo", {}).get("url"):
@@ -131,7 +144,7 @@ def _normalize(item: dict[str, Any], detail: dict[str, Any] | None) -> dict[str,
         "description": (detail or {}).get("description"),
         "price_amount": price.get("amount"),
         "currency": price.get("currency", "USD"),
-        "strikethrough_price_amount": ((detail or item).get("strikethrough_price") or {}).get("amount"),
+        "strikethrough_price_amount": strikethrough_amount,
         "condition": _extract_condition(detail),
         "is_live": item.get("is_live", True),
         "is_pending": item.get("is_pending", False),

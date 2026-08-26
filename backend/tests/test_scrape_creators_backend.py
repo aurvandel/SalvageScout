@@ -137,6 +137,72 @@ def test_fetch_listings_uses_detail_mileage_when_title_has_none(db):
 
 
 @respx.mock
+def test_fetch_listings_coerces_strikethrough_price_string_to_float(db):
+    # Confirmed live: strikethrough_price.amount comes back as a numeric string
+    # ("3000.00") while price.amount is a plain int — the Numeric(10, 2) column
+    # needs a float/Decimal, not a str.
+    item_with_strikethrough = {
+        **ITEM_RESPONSE,
+        "strikethrough_price": {"formatted_amount": "$40,000", "amount": "40000.00"},
+    }
+    respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/location/search").mock(
+        return_value=httpx.Response(200, json=LOCATION_RESPONSE)
+    )
+    respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/search").mock(
+        return_value=httpx.Response(200, json=SEARCH_RESPONSE)
+    )
+    respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/item").mock(
+        return_value=httpx.Response(200, json=item_with_strikethrough)
+    )
+
+    sf = _search_filter(db)
+    items = fetch_listings(db, sf, 10, _config())
+
+    assert items[0]["strikethrough_price_amount"] == 40000.0
+    assert isinstance(items[0]["strikethrough_price_amount"], float)
+
+
+@respx.mock
+def test_fetch_listings_drops_condition_outside_scrapecreators_enum(db):
+    # SearchFilter.condition is shared across providers (the admin UI's own
+    # placeholder is "used", Apify's convention) but ScrapeCreators only accepts
+    # new/used_like_new/used_good/used_fair — confirmed against its live tool
+    # schema. A raw "used" must not be forwarded as-is.
+    respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/location/search").mock(
+        return_value=httpx.Response(200, json=LOCATION_RESPONSE)
+    )
+    search_route = respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/search").mock(
+        return_value=httpx.Response(200, json=SEARCH_RESPONSE)
+    )
+    respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/item").mock(
+        return_value=httpx.Response(200, json=ITEM_RESPONSE)
+    )
+
+    sf = _search_filter(db, condition="used")
+    fetch_listings(db, sf, 10, _config())
+
+    assert "condition" not in search_route.calls.last.request.url.params
+
+
+@respx.mock
+def test_fetch_listings_passes_through_valid_condition(db):
+    respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/location/search").mock(
+        return_value=httpx.Response(200, json=LOCATION_RESPONSE)
+    )
+    search_route = respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/search").mock(
+        return_value=httpx.Response(200, json=SEARCH_RESPONSE)
+    )
+    respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/item").mock(
+        return_value=httpx.Response(200, json=ITEM_RESPONSE)
+    )
+
+    sf = _search_filter(db, condition="used_good")
+    fetch_listings(db, sf, 10, _config())
+
+    assert search_route.calls.last.request.url.params["condition"] == "used_good"
+
+
+@respx.mock
 def test_fetch_listings_skips_geocoding_when_already_cached(db):
     location_route = respx.get("https://api.scrapecreators.com/v1/facebook/marketplace/location/search").mock(
         return_value=httpx.Response(200, json=LOCATION_RESPONSE)
