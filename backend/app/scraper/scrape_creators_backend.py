@@ -18,8 +18,10 @@ MILES_TO_KM = 1.60934
 # so only forward values that match; anything else is dropped rather than sent.
 _VALID_CONDITIONS = {"new", "used_like_new", "used_good", "used_fair"}
 
-# Same story for these — confirmed against the search endpoint's live tool
-# schema. sort_by/delivery_method/availability have no Apify equivalent so
+# Same story for these — confirmed via live calls against the REST endpoint
+# itself (not just its tool schema): sort_by=price_ascend actually reorders
+# results, and date_listed/delivery_method/availability are accepted without
+# error. sort_by/delivery_method/availability have no Apify equivalent so
 # they're only ever set when this provider is active. date_listed reuses the
 # shared days_listed column (a raw day count, matched to Apify's own
 # `daysSinceListed` URL param) but ScrapeCreators only accepts these three

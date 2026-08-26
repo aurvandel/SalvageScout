@@ -342,6 +342,43 @@ describe('SearchFiltersTab', () => {
     expect((screen.getByLabelText('Date Listed') as HTMLSelectElement).tagName).toBe('SELECT')
   })
 
+  it('blanks an out-of-enum condition when editing an Apify-era filter under ScrapeCreators', async () => {
+    // mockSearchFilters[1] carries condition='used' (the Apify-era admin UI
+    // placeholder), which matches no ScrapeCreators <option>. With the old
+    // startEdit the select would silently display "Any condition" while form
+    // state (and thus the eventual save) still held 'used'. days_listed=30 is
+    // a valid ScrapeCreators bucket, so it should survive unchanged —
+    // asserting that guards against over-blanking valid values too.
+    mockSettings('scrape_creators')
+    vi.mocked(client.fetchSearchFilters)
+      .mockResolvedValueOnce(mockSearchFilters)
+      .mockResolvedValueOnce(mockSearchFilters)
+    vi.mocked(client.updateSearchFilter).mockResolvedValueOnce(mockSearchFilters[1])
+
+    render(<SearchFiltersTab />)
+
+    await waitFor(() => {
+      expect(screen.getByText('CA Location Search')).toBeInTheDocument()
+    })
+
+    const editButtons = screen.getAllByRole('button', { name: /Edit/ })
+    await userEvent.click(editButtons[1])
+
+    const conditionSelect = await screen.findByLabelText('Condition') as HTMLSelectElement
+    expect(conditionSelect.value).toBe('')
+    const dateSelect = screen.getByLabelText('Date Listed') as HTMLSelectElement
+    expect(dateSelect.value).toBe('30')
+
+    const updateButton = screen.getByRole('button', { name: /Update Filter/ })
+    await userEvent.click(updateButton)
+
+    await waitFor(() => {
+      const payload = vi.mocked(client.updateSearchFilter).mock.calls[0][1]
+      expect(payload.condition).toBeNull()
+      expect(payload.days_listed).toBe(30)
+    })
+  })
+
   it('hides ScrapeCreators-only fields and uses free-form condition/days for Apify', async () => {
     mockSettings('apify')
     vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce([])

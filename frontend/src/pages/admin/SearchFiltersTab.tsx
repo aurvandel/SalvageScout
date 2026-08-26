@@ -8,6 +8,12 @@ import type { SearchFilterOut, CriteriaProfileOut } from '../../api/types'
 // ScrapeCreators is the active provider.
 const SC_CONDITIONS = ['new', 'used_like_new', 'used_good', 'used_fair']
 const SC_DATE_LISTED = ['1', '7', '30']
+// creation_time_descend's page-1 ordering isn't stable between identical
+// requests (per ScrapeCreators' own docs) — fine for a one-off browse, but
+// this project's single-page fetch (see scrape_creators_backend.py) means an
+// alerting run can miss new listings that would need a second page + id-dedupe
+// to catch reliably. Still offered since a filter can just as easily be run
+// manually; not worth blocking on the pagination work it'd really want.
 const SC_SORT_BY = ['suggested', 'distance_ascend', 'creation_time_descend', 'price_ascend', 'price_descend']
 const SC_DELIVERY_METHODS = ['all', 'local_pickup', 'shipping']
 const SC_AVAILABILITY = ['available', 'sold', 'all']
@@ -68,6 +74,16 @@ export default function SearchFiltersTab() {
   }
 
   function startEdit(sf: SearchFilterOut) {
+    // ScrapeCreators' condition/date_listed selects only offer the enum values
+    // below — a saved value outside that enum (e.g. Apify's free-form
+    // "used", or a days_listed the endpoint doesn't bucket) has no matching
+    // <option>, so the select would silently fall back to "Any" while `form`
+    // kept the stale value. Without this, an untouched Update would resend
+    // that stale value, which _search then drops server-side anyway — the
+    // user sees "Any" but the save silently changes behavior. Blank it here
+    // so what's displayed always matches what would actually be sent.
+    const days = sf.days_listed?.toString() || ''
+    const condition = sf.condition || ''
     setEditingId(sf.id)
     setForm({
       name: sf.name,
@@ -79,8 +95,8 @@ export default function SearchFiltersTab() {
       min_price: sf.min_price?.toString() || '',
       max_price: sf.max_price?.toString() || '',
       radius_miles: sf.radius_miles?.toString() || '',
-      days_listed: sf.days_listed?.toString() || '',
-      condition: sf.condition || '',
+      days_listed: isScrapeCreators && !SC_DATE_LISTED.includes(days) ? '' : days,
+      condition: isScrapeCreators && !SC_CONDITIONS.includes(condition) ? '' : condition,
       results_limit: sf.results_limit?.toString() || '100',
       criteria_profile_id: sf.criteria_profile_id ?? '',
       sort_by: sf.sort_by || '',
@@ -198,9 +214,12 @@ export default function SearchFiltersTab() {
             value={form.search_mode}
             onChange={(e) => setForm(prev => ({ ...prev, search_mode: e.target.value as 'url' | 'location' }))}
           >
-            <option value="url">Direct URL</option>
+            <option value="url" disabled={isScrapeCreators}>Direct URL{isScrapeCreators ? ' (not supported by ScrapeCreators)' : ''}</option>
             <option value="location">Location + Filters</option>
           </select>
+          {isScrapeCreators && (
+            <p className="help-text">ScrapeCreators can't consume a pasted Marketplace URL — it needs the structured fields below.</p>
+          )}
         </div>
 
         {form.search_mode === 'url' ? (
