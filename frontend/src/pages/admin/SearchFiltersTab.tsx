@@ -35,6 +35,8 @@ const emptyForm = {
   sort_by: '',
   delivery_method: '',
   availability: '',
+  latitude: '',
+  longitude: '',
 }
 
 export default function SearchFiltersTab() {
@@ -45,6 +47,7 @@ export default function SearchFiltersTab() {
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [isLocating, setIsLocating] = useState(false)
   const isScrapeCreators = scraperProvider === 'scrape_creators'
 
   useEffect(() => {
@@ -102,7 +105,37 @@ export default function SearchFiltersTab() {
       sort_by: sf.sort_by || '',
       delivery_method: sf.delivery_method || '',
       availability: sf.availability || '',
+      latitude: sf.latitude?.toString() || '',
+      longitude: sf.longitude?.toString() || '',
     })
+  }
+
+  function useMyLocation() {
+    if (!navigator.geolocation) {
+      setError("This browser doesn't support geolocation — enter latitude/longitude manually.")
+      return
+    }
+    setIsLocating(true)
+    setError(null)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setForm(prev => ({
+          ...prev,
+          latitude: position.coords.latitude.toFixed(6),
+          longitude: position.coords.longitude.toFixed(6),
+        }))
+        setIsLocating(false)
+      },
+      (geoError) => {
+        // Browsers require a secure context (https, or localhost) for
+        // geolocation — a plain http:// LAN address like this project's own
+        // dev URL will reject the permission request outright, surfacing as
+        // a PERMISSION_DENIED error here rather than a prompt.
+        setError(`Couldn't get your location: ${geoError.message}`)
+        setIsLocating(false)
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
   }
 
   function resetForm() {
@@ -128,6 +161,8 @@ export default function SearchFiltersTab() {
       sort_by: form.search_mode === 'location' && form.sort_by ? form.sort_by : null,
       delivery_method: form.search_mode === 'location' && form.delivery_method ? form.delivery_method : null,
       availability: form.search_mode === 'location' && form.availability ? form.availability : null,
+      latitude: form.search_mode === 'location' && form.latitude ? parseFloat(form.latitude) : null,
+      longitude: form.search_mode === 'location' && form.longitude ? parseFloat(form.longitude) : null,
     }
   }
 
@@ -244,7 +279,37 @@ export default function SearchFiltersTab() {
                 value={form.location}
                 onChange={(e) => setForm(prev => ({ ...prev, location: e.target.value }))}
               />
+              {isScrapeCreators && (
+                <p className="help-text">ScrapeCreators actually searches by latitude/longitude, not this text — it's only used to look them up automatically if you leave Latitude/Longitude blank below.</p>
+              )}
             </div>
+            {isScrapeCreators && (
+              <div className="config-item">
+                <label>Coordinates</label>
+                <div className="filter-grid">
+                  <input
+                    aria-label="Latitude"
+                    type="number"
+                    step="any"
+                    placeholder="Latitude"
+                    value={form.latitude}
+                    onChange={(e) => setForm(prev => ({ ...prev, latitude: e.target.value }))}
+                  />
+                  <input
+                    aria-label="Longitude"
+                    type="number"
+                    step="any"
+                    placeholder="Longitude"
+                    value={form.longitude}
+                    onChange={(e) => setForm(prev => ({ ...prev, longitude: e.target.value }))}
+                  />
+                  <button type="button" className="edit-button" onClick={useMyLocation} disabled={isLocating}>
+                    {isLocating ? 'Locating…' : '📍 Use My Location'}
+                  </button>
+                </div>
+                <p className="help-text">Requires the browser's location permission and a secure (https) origin — won't work over a plain http:// LAN address.</p>
+              </div>
+            )}
             <div className="config-item">
               <label htmlFor="sf-query">Search Query</label>
               <input id="sf-query" type="text" placeholder="sedan" value={form.query} onChange={(e) => setForm(prev => ({ ...prev, query: e.target.value }))} />
