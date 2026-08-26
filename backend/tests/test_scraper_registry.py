@@ -17,9 +17,9 @@ def test_get_available_scraper_providers():
     assert get_available_scraper_providers() == ["apify", "bright_data", "scrape_creators"]
 
 
-def test_supports_search_mode_url_only_for_apify():
+def test_supports_search_mode_url_for_apify_and_bright_data():
     assert supports_search_mode("apify", "url") is True
-    assert supports_search_mode("bright_data", "url") is False
+    assert supports_search_mode("bright_data", "url") is True
     assert supports_search_mode("scrape_creators", "url") is False
 
 

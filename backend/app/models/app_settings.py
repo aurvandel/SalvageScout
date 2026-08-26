@@ -31,7 +31,6 @@ class AppSettings(Base):
 
     scraper_provider: Mapped[str] = mapped_column(String, nullable=False, default="apify")
     bright_data_api_key: Mapped[str | None] = mapped_column(String, nullable=True)
-    bright_data_dataset_id: Mapped[str | None] = mapped_column(String, nullable=True)
     scrape_creators_api_key: Mapped[str | None] = mapped_column(String, nullable=True)
 
     discord_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

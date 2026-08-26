@@ -86,7 +86,6 @@ export interface ScraperSettingsOut {
   provider: string
   available_providers: string[]
   bright_data_api_key_masked: string | null
-  bright_data_dataset_id: string | null
   scrape_creators_api_key_masked: string | null
   incompatible_filter_names: string[]
 }

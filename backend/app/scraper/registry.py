@@ -7,10 +7,11 @@ _SCRAPERS: dict[str, ScraperBackend] = {
     "scrape_creators": scrape_creators_backend.fetch_listings,
 }
 
-# Providers that can consume a raw pasted FB search URL directly. Bright Data
-# and ScrapeCreators need structured fields (query, location, price range) —
-# see the plan's note on search_mode="url" filters being provider-incompatible.
-_SUPPORTS_URL_MODE = {"apify"}
+# Providers that can consume a raw pasted FB search URL directly. Bright Data's
+# scraper takes a Marketplace search URL as input (same one Apify uses, built by
+# url_builder), so it supports url-mode too. ScrapeCreators needs structured
+# fields (query, lat/lng, price range) and can't consume a URL at all.
+_SUPPORTS_URL_MODE = {"apify", "bright_data"}
 
 
 def get_scraper(provider: str) -> ScraperBackend:

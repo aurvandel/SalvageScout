@@ -11,7 +11,6 @@ const PROVIDER_LABELS: Record<string, string> = {
 export default function ScraperTab() {
   const [scraper, setScraper] = useState<ScraperSettingsOut | null>(null)
   const [provider, setProvider] = useState('')
-  const [datasetId, setDatasetId] = useState('')
   const [keys, setKeys] = useState({ bright_data_api_key: '', scrape_creators_api_key: '' })
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -25,7 +24,6 @@ export default function ScraperTab() {
       const data = await fetchSettings()
       setScraper(data.scraper)
       setProvider(data.scraper.provider)
-      setDatasetId(data.scraper.bright_data_dataset_id || '')
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load scraper settings')
@@ -36,7 +34,7 @@ export default function ScraperTab() {
     try {
       setIsSaving(true)
       setError(null)
-      const fields: Record<string, string> = { provider, bright_data_dataset_id: datasetId }
+      const fields: Record<string, string> = { provider }
       if (keys.bright_data_api_key) fields.bright_data_api_key = keys.bright_data_api_key
       if (keys.scrape_creators_api_key) fields.scrape_creators_api_key = keys.scrape_creators_api_key
 
@@ -70,17 +68,18 @@ export default function ScraperTab() {
           </select>
         </div>
 
-        {provider !== 'apify' && scraper.incompatible_filter_names.length > 0 && (
+        {provider !== 'apify' && provider !== 'bright_data' && scraper.incompatible_filter_names.length > 0 && (
           <div className="error-message">
-            These search filters use a pasted Facebook URL, which only Apify can scrape, and won't
-            run under {PROVIDER_LABELS[provider] || provider}: {scraper.incompatible_filter_names.join(', ')}
+            These search filters use a pasted Facebook URL, which only Apify and Bright Data can
+            scrape, and won't run under {PROVIDER_LABELS[provider] || provider}: {scraper.incompatible_filter_names.join(', ')}
           </div>
         )}
 
         <h3>Bright Data</h3>
         <p className="help-text">
-          Unverified: the request/response shape below is based on secondhand documentation, not a
-          live call against a real dataset. Confirm it works before relying on it for real runs.
+          Uses Bright Data's Facebook Marketplace Web Scraper API (5K free records/month, then
+          $1.5/1K) — not the paid Datasets marketplace. No dataset ID to configure; it's a fixed,
+          shared scraper.
         </p>
         <div className="config-item">
           <label htmlFor="bright-data-key">
@@ -93,16 +92,6 @@ export default function ScraperTab() {
             value={keys.bright_data_api_key}
             onChange={(e) => setKeys(prev => ({ ...prev, bright_data_api_key: e.target.value }))}
           />
-        </div>
-        <div className="config-item">
-          <label htmlFor="bright-data-dataset-id">Bright Data Dataset ID</label>
-          <input
-            id="bright-data-dataset-id"
-            type="text"
-            value={datasetId}
-            onChange={(e) => setDatasetId(e.target.value)}
-          />
-          <p className="help-text">Found on the Facebook Marketplace scraper's page in the Bright Data dashboard.</p>
         </div>
 
         <h3>ScrapeCreators</h3>

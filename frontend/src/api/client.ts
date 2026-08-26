@@ -112,7 +112,6 @@ export function updateApifySettings(fields: {
 export function updateScraperSettings(fields: {
   provider?: string
   bright_data_api_key?: string
-  bright_data_dataset_id?: string
   scrape_creators_api_key?: string
 }): Promise<AppSettingsOut> {
   return request<AppSettingsOut>('/api/admin/settings/scraper', {

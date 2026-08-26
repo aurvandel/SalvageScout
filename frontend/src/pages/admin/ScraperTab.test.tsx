@@ -15,7 +15,6 @@ const baseScraper = {
   provider: "apify",
   available_providers: ["apify", "bright_data", "scrape_creators"],
   bright_data_api_key_masked: null,
-  bright_data_dataset_id: null,
   scrape_creators_api_key_masked: null,
   incompatible_filter_names: [],
 }
@@ -53,11 +52,21 @@ describe("ScraperTab", () => {
 
   it("shows a warning when switching providers strands url-mode filters", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
-      scraper: { ...baseScraper, provider: "bright_data", incompatible_filter_names: ["Trucks near me"] },
+      scraper: { ...baseScraper, provider: "scrape_creators", incompatible_filter_names: ["Trucks near me"] },
       apify: {} as any, llm: {} as any, notifications: {} as any,
     })
     render(<ScraperTab />)
     await waitFor(() => { expect(screen.getByText(/Trucks near me/)).toBeInTheDocument() })
+  })
+
+  it("does not warn about url-mode filters when switching to Bright Data", async () => {
+    vi.mocked(fetchSettings).mockResolvedValue({
+      scraper: { ...baseScraper, provider: "bright_data", incompatible_filter_names: ["Trucks near me"] },
+      apify: {} as any, llm: {} as any, notifications: {} as any,
+    })
+    render(<ScraperTab />)
+    await waitFor(() => { expect(screen.queryByText("Loading...")).not.toBeInTheDocument() })
+    expect(screen.queryByText(/Trucks near me/)).not.toBeInTheDocument()
   })
 
   it("calls updateScraperSettings with correct payload when saving", async () => {
@@ -74,7 +83,7 @@ describe("ScraperTab", () => {
     const saveButton = screen.getByRole("button", { name: /save scraper settings/i })
     await user.click(saveButton)
     await waitFor(() => {
-      expect(updateScraperSettings).toHaveBeenCalledWith({ provider: "scrape_creators", bright_data_dataset_id: "" })
+      expect(updateScraperSettings).toHaveBeenCalledWith({ provider: "scrape_creators" })
     })
   })
 
@@ -94,7 +103,6 @@ describe("ScraperTab", () => {
     await waitFor(() => {
       expect(updateScraperSettings).toHaveBeenCalledWith({
         provider: "apify",
-        bright_data_dataset_id: "",
         bright_data_api_key: "new-bd-key",
       })
     })

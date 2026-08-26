@@ -1,16 +1,17 @@
-"""Bright Data Facebook Marketplace "discover by keyword" backend.
+"""Bright Data Facebook Marketplace scraper (Web Scraper API, not the paid
+Datasets marketplace — 5K free records/month, $1.5/1K after).
 
-UNVERIFIED CONTRACT: the trigger/poll/snapshot flow, request shape, and
-response fields below come from secondary sources (search-engine summaries of
-Bright Data's docs) — direct fetches to docs.brightdata.com were network-
-blocked from the environment this was written in, so none of it is
-primary-source-confirmed. Before relying on this in production: get a real
-API key + dataset_id, run one call, and adjust `_normalize`/`_trigger`/
-`_poll_until_ready` to match whatever comes back. See the plan file
-(apify-is-going-to-bright-quiche.md) for the full caveat.
+Contract confirmed against Bright Data's own docs (docs.brightdata.com
+api-reference/scrapers/social-media-apis/facebook-marketplace-discover-by-url
+and .../facebook-marketplace-collect-by-url): a single synchronous POST to
+/datasets/v3/scrape, no trigger/poll/snapshot dance. The "discover by keyword"
+variant of this same dataset only accepts a bare keyword with no location/price
+filtering, so this backend uses "discover by url" instead, feeding it the same
+FB Marketplace search URL Apify already builds via url_builder — that URL's
+query/minPrice/maxPrice/radius/itemCondition params are honored by the scraper
+just like they are by a real browser hitting that page.
 """
 
-import time
 from datetime import datetime
 from typing import Any
 
@@ -19,54 +20,26 @@ from sqlalchemy.orm import Session
 
 from app.models import AppSettings, SearchFilter
 from app.scraper.parser import parse_vehicle_specs
+from app.scraper.url_builder import build_search_url
 
-BASE_URL = "https://api.brightdata.com/datasets/v3"
-POLL_INTERVAL_SECONDS = 3.0
-POLL_TIMEOUT_SECONDS = 120.0
+# Bright Data's pre-built "Facebook Marketplace" Web Scraper API dataset. Fixed
+# and shared by every account using this scraper — not something a user creates
+# or looks up in their dashboard, so unlike the old design this isn't admin-configurable.
+DATASET_ID = "gd_lvt9iwuh6fbcwmx1a"
+BASE_URL = "https://api.brightdata.com/datasets/v3/scrape"
 
 
 def _headers(api_key: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
 
-def _trigger(api_key: str, dataset_id: str, search_filter: SearchFilter, results_limit: int) -> str:
-    payload = [
-        {
-            "keyword": search_filter.query or "",
-            "location": search_filter.location,
-            "min_price": search_filter.min_price,
-            "max_price": search_filter.max_price,
-            "limit": results_limit,
-        }
-    ]
+def _scrape(api_key: str, search_url: str, results_limit: int) -> list[dict[str, Any]]:
     response = httpx.post(
-        f"{BASE_URL}/trigger",
+        BASE_URL,
         headers=_headers(api_key),
-        params={"dataset_id": dataset_id, "include_errors": "true"},
-        json=payload,
-        timeout=30.0,
-    )
-    response.raise_for_status()
-    return response.json()["snapshot_id"]
-
-
-def _poll_until_ready(api_key: str, snapshot_id: str) -> None:
-    deadline = time.monotonic() + POLL_TIMEOUT_SECONDS
-    while time.monotonic() < deadline:
-        response = httpx.get(f"{BASE_URL}/progress/{snapshot_id}", headers=_headers(api_key), timeout=15.0)
-        response.raise_for_status()
-        status = response.json().get("status")
-        if status == "ready":
-            return
-        if status == "failed":
-            raise RuntimeError(f"Bright Data snapshot {snapshot_id} failed")
-        time.sleep(POLL_INTERVAL_SECONDS)
-    raise TimeoutError(f"Bright Data snapshot {snapshot_id} did not become ready within {POLL_TIMEOUT_SECONDS}s")
-
-
-def _fetch_snapshot(api_key: str, snapshot_id: str) -> list[dict[str, Any]]:
-    response = httpx.get(
-        f"{BASE_URL}/snapshot/{snapshot_id}", headers=_headers(api_key), params={"format": "json"}, timeout=30.0
+        params={"dataset_id": DATASET_ID, "notify": "false", "include_errors": "true"},
+        json={"input": [{"url": search_url}], "limit_per_input": results_limit},
+        timeout=60.0,
     )
     response.raise_for_status()
     return response.json() or []
@@ -85,7 +58,7 @@ def _normalize(raw: dict[str, Any]) -> dict[str, Any]:
     specs = parse_vehicle_specs(title, None)
 
     return {
-        "fb_listing_id": raw.get("product_id") or raw.get("id"),
+        "fb_listing_id": raw.get("product_id"),
         "url": raw["url"],
         "title": title,
         "description": raw.get("description") or raw.get("seller_description"),
@@ -93,8 +66,7 @@ def _normalize(raw: dict[str, Any]) -> dict[str, Any]:
         "currency": raw.get("currency", "USD"),
         "strikethrough_price_amount": initial_price if initial_price != final_price else None,
         "condition": raw.get("condition"),
-        # Bright Data's example response has no live/pending/sold flags —
-        # default to Apify's own "unknown means active" convention.
+        # No live/pending/sold flags in the response — default to "unknown means active".
         "is_live": True,
         "is_pending": False,
         "is_sold": False,
@@ -114,14 +86,8 @@ def fetch_listings(
 ) -> list[dict[str, Any]]:
     if not config.bright_data_api_key:
         raise RuntimeError("Bright Data API key is not configured")
-    if not config.bright_data_dataset_id:
-        raise RuntimeError(
-            "Bright Data dataset ID is not configured — find it on the Facebook Marketplace "
-            "scraper's page in the Bright Data dashboard"
-        )
 
-    snapshot_id = _trigger(config.bright_data_api_key, config.bright_data_dataset_id, search_filter, results_limit)
-    _poll_until_ready(config.bright_data_api_key, snapshot_id)
-    raw_items = _fetch_snapshot(config.bright_data_api_key, snapshot_id)
+    search_url = build_search_url(search_filter)
+    raw_items = _scrape(config.bright_data_api_key, search_url, results_limit)
 
     return [_normalize(raw) for raw in raw_items]

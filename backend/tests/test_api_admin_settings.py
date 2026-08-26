@@ -82,10 +82,24 @@ def test_patch_scraper_settings_flags_incompatible_url_mode_filters(client):
         json={"name": "raw url filter", "search_mode": "url", "search_url": "https://example.com/search"},
     )
 
-    response = client.patch("/api/admin/settings/scraper", json={"provider": "bright_data"})
+    response = client.patch("/api/admin/settings/scraper", json={"provider": "scrape_creators"})
 
     assert response.status_code == 200
     assert "raw url filter" in response.json()["scraper"]["incompatible_filter_names"]
+
+
+def test_patch_scraper_settings_bright_data_does_not_flag_url_mode_filters(client):
+    # Unlike ScrapeCreators, Bright Data's scraper takes a real Marketplace
+    # search URL as input, so url-mode filters run fine under it.
+    client.post(
+        "/api/search-filters",
+        json={"name": "raw url filter", "search_mode": "url", "search_url": "https://example.com/search"},
+    )
+
+    response = client.patch("/api/admin/settings/scraper", json={"provider": "bright_data"})
+
+    assert response.status_code == 200
+    assert response.json()["scraper"]["incompatible_filter_names"] == []
 
 
 def test_patch_notification_settings_toggles_channels(client):
