@@ -1,7 +1,9 @@
+from decimal import Decimal
+
 import pytest
 from unittest.mock import MagicMock
 
-from app.scraper.apify_client import ACTOR_ID, fetch_listings, get_account_usage
+from app.scraper.apify_client import CURIOUS_CODER_ACTOR_ID, ACTOR_ID, fetch_listings, get_account_usage
 
 
 def test_fetch_listings_calls_actor_with_expected_input(mocker):
@@ -48,6 +50,29 @@ def test_fetch_listings_uses_custom_actor_id(mocker):
     fetch_listings("https://example.com", results_limit=5, apify_token="fake-token", actor_id="custom/actor")
 
     mock_client.actor.assert_called_once_with("custom/actor")
+
+
+def test_fetch_listings_uses_curious_coder_input_shape(mocker):
+    mock_client = MagicMock()
+    mock_client.actor.return_value.call.return_value = MagicMock(default_dataset_id="d")
+    mock_client.dataset.return_value.iterate_items.return_value = iter([])
+    mocker.patch("app.scraper.apify_client.ApifyClient", return_value=mock_client)
+
+    fetch_listings(
+        "https://www.facebook.com/marketplace/x/search/?query=sedan",
+        results_limit=10,
+        apify_token="fake-token",
+        actor_id=CURIOUS_CODER_ACTOR_ID,
+    )
+
+    call_kwargs = mock_client.actor.return_value.call.call_args.kwargs
+    assert call_kwargs["run_input"] == {
+        "urls": ["https://www.facebook.com/marketplace/x/search/?query=sedan"],
+        "getListingDetails": True,
+        "getAllListingPhotos": True,
+    }
+    assert call_kwargs["max_items"] == 10
+    assert call_kwargs["max_total_charge_usd"] == Decimal(10) * Decimal("0.002") + Decimal("0.05")
 
 
 def test_fetch_listings_raises_when_token_missing():
