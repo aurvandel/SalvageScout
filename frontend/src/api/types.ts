@@ -79,7 +79,17 @@ export interface LLMSettingsOut {
 
 export interface ApifySettingsOut {
   actor_id: string
-  apify_token_masked: string | null
+}
+
+export interface ApifyAccountOut {
+  id: number
+  label: string
+  api_token_masked: string | null
+  priority: number
+  is_active: boolean
+  last_used_at: string | null
+  last_error: string | null
+  last_error_at: string | null
 }
 
 export interface ScraperSettingsOut {
@@ -162,8 +172,9 @@ export interface ArenaRunOut {
   created_at: string
 }
 
-export interface ApifyUsageOut {
-  configured: boolean
+export interface ApifyAccountUsageOut {
+  account_id: number
+  label: string
   used_usd: number | null
   limit_usd: number | null
   cycle_start: string | null
@@ -197,7 +208,7 @@ export interface LLMProviderUsageOut {
 }
 
 export interface UsageOut {
-  apify: ApifyUsageOut
+  apify: ApifyAccountUsageOut[]
   scrape_creators: ScrapeCreatorsUsageOut
   bright_data: BrightDataUsageOut
   llm_this_month: LLMProviderUsageOut[]
@@ -218,6 +229,7 @@ export interface ScraperStatusOut {
   configured: boolean
   status: ConnectionStatus
   error: string | null
+  label: string | null
 }
 
 export interface SystemStatusOut {

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import LLMTab from './admin/LLMTab'
 import ScraperTab from './admin/ScraperTab'
+import ApifyAccountsTab from './admin/ApifyAccountsTab'
 import NotificationsTab from './admin/NotificationsTab'
 import SearchFiltersTab from './admin/SearchFiltersTab'
 import ScheduleTab from './admin/ScheduleTab'
@@ -13,6 +14,7 @@ import './AdminPanel.css'
 const TABS = [
   { id: 'llm', label: 'LLM' },
   { id: 'scraper', label: 'Scraper' },
+  { id: 'apify-accounts', label: 'Apify Accounts' },
   { id: 'usage', label: 'Usage' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'prompts', label: 'Prompts' },
@@ -46,6 +48,7 @@ export default function AdminPanel() {
       <div className="tab-content">
         {activeTab === 'llm' && <LLMTab />}
         {activeTab === 'scraper' && <ScraperTab />}
+        {activeTab === 'apify-accounts' && <ApifyAccountsTab />}
         {activeTab === 'usage' && <UsageTab />}
         {activeTab === 'notifications' && <NotificationsTab />}
         {activeTab === 'prompts' && <PromptsTab />}

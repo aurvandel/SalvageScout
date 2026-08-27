@@ -36,7 +36,7 @@ const mockSettings: AppSettingsOut = {
     openai_api_key_masked: null,
     gemini_api_key_masked: null,
   },
-  apify: { actor_id: '123', apify_token_masked: '***token***' },
+  apify: { actor_id: '123' },
   scraper: {
     provider: 'apify',
     available_providers: ['apify', 'scrape_creators'],
@@ -623,7 +623,7 @@ describe('successful responses resolve with parsed JSON', () => {
   it('updateApifySettings resolves with the parsed settings', async () => {
     const updated: AppSettingsOut = {
       ...mockSettings,
-      apify: { actor_id: '456', apify_token_masked: '***token***' },
+      apify: { actor_id: '456' },
     }
     mockFetch.mockResolvedValue(jsonResponse(updated))
 

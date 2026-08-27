@@ -13,6 +13,9 @@ class ScraperStatusOut(BaseModel):
     configured: bool
     status: str  # "connected" | "error" | "not_configured"
     error: str | None = None
+    # Distinguishes multiple rows for the same provider (e.g. several Apify
+    # accounts) — None for providers with a single account/key.
+    label: str | None = None
 
 
 class SystemStatusOut(BaseModel):

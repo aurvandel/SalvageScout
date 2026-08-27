@@ -1,4 +1,4 @@
-from app.models import CriteriaProfile, Listing, Score
+from app.models import ApifyAccount, CriteriaProfile, Listing, Score
 from app.settings_service import get_app_settings
 
 
@@ -33,21 +33,18 @@ def _seed_score(db, model_used="anthropic/claude-haiku-4-5", input_tokens=1000, 
     return score
 
 
-def test_get_usage_apify_not_configured(client, db):
-    config = get_app_settings(db)
-    config.apify_token = None
-    db.commit()
+def test_get_usage_apify_not_configured(client, db, mocker):
+    mocker.patch("app.settings_service.env_settings.apify_token", None)
 
     response = client.get("/api/admin/usage")
 
     assert response.status_code == 200
-    body = response.json()
-    assert body["apify"]["configured"] is False
-    assert body["apify"]["used_usd"] is None
+    assert response.json()["apify"] == []
 
 
 def test_get_usage_apify_configured_calls_client(client, db, mocker):
-    client.patch("/api/admin/settings/apify", json={"apify_token": "fake-apify-token"})
+    db.add(ApifyAccount(label="Test Account", api_token="fake-apify-token"))
+    db.commit()
     mocker.patch(
         "app.api.admin.get_account_usage",
         return_value={
@@ -62,19 +59,36 @@ def test_get_usage_apify_configured_calls_client(client, db, mocker):
 
     assert response.status_code == 200
     apify = response.json()["apify"]
-    assert apify["configured"] is True
-    assert apify["used_usd"] == 12.5
-    assert apify["limit_usd"] == 300.0
+    assert len(apify) == 1
+    assert apify[0]["label"] == "Test Account"
+    assert apify[0]["used_usd"] == 12.5
+    assert apify[0]["limit_usd"] == 300.0
 
 
-def test_get_usage_apify_reports_error_without_failing_request(client, mocker):
-    client.patch("/api/admin/settings/apify", json={"apify_token": "fake-apify-token"})
+def test_get_usage_apify_reports_error_without_failing_request(client, db, mocker):
+    db.add(ApifyAccount(label="Test Account", api_token="fake-apify-token"))
+    db.commit()
     mocker.patch("app.api.admin.get_account_usage", side_effect=RuntimeError("boom"))
 
     response = client.get("/api/admin/usage")
 
     assert response.status_code == 200
-    assert response.json()["apify"]["error"] == "boom"
+    assert response.json()["apify"][0]["error"] == "boom"
+
+
+def test_get_usage_apify_reports_one_row_per_account(client, db, mocker):
+    db.add(ApifyAccount(label="Mine", api_token="token-a", priority=1))
+    db.add(ApifyAccount(label="Wife's", api_token="token-b", priority=2))
+    db.commit()
+    mocker.patch(
+        "app.api.admin.get_account_usage",
+        return_value={"used_usd": 1.0, "limit_usd": 10.0, "cycle_start": "2026-08-01", "cycle_end": "2026-08-31"},
+    )
+
+    response = client.get("/api/admin/usage")
+
+    apify = response.json()["apify"]
+    assert [row["label"] for row in apify] == ["Mine", "Wife's"]
 
 
 def test_get_usage_scrape_creators_not_configured(client, db):

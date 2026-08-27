@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.config import settings as env_settings
-from app.models import AppSettings
+from app.models import AppSettings, ApifyAccount
 
 
 def get_app_settings(db: Session) -> AppSettings:
@@ -18,7 +18,6 @@ def get_app_settings(db: Session) -> AppSettings:
             anthropic_api_key=env_settings.anthropic_api_key,
             openai_api_key=env_settings.openai_api_key,
             gemini_api_key=env_settings.gemini_api_key,
-            apify_token=env_settings.apify_token,
             discord_webhook_url=env_settings.discord_webhook_url,
             discord_enabled=bool(env_settings.discord_webhook_url),
             telegram_bot_token=env_settings.telegram_bot_token,
@@ -38,3 +37,21 @@ def get_api_key_for_provider(config: AppSettings, provider: str) -> str | None:
         "openai": config.openai_api_key,
         "gemini": config.gemini_api_key,
     }.get(provider)
+
+
+def get_apify_accounts(db: Session) -> list[ApifyAccount]:
+    """All configured Apify accounts, ordered (priority, id) — the order
+    apify_backend tries them in. On a fresh install with an empty table,
+    seeds one account from the APIFY_TOKEN env var if set, so the pipeline
+    still works before anyone visits the admin panel. Existing installs upgrading
+    from the old single-token AppSettings field get theirs from the
+    014_add_apify_accounts migration instead, so this fallback only fires
+    when the table is genuinely empty."""
+    accounts = db.query(ApifyAccount).order_by(ApifyAccount.priority, ApifyAccount.id).all()
+    if not accounts and env_settings.apify_token:
+        seed = ApifyAccount(label="Default (from .env)", api_token=env_settings.apify_token, priority=100)
+        db.add(seed)
+        db.commit()
+        db.refresh(seed)
+        accounts = [seed]
+    return accounts

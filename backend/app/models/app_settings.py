@@ -24,7 +24,6 @@ class AppSettings(Base):
     openai_api_key: Mapped[str | None] = mapped_column(String, nullable=True)
     gemini_api_key: Mapped[str | None] = mapped_column(String, nullable=True)
 
-    apify_token: Mapped[str | None] = mapped_column(String, nullable=True)
     apify_actor_id: Mapped[str] = mapped_column(
         String, nullable=False, default="apify/facebook-marketplace-scraper"
     )

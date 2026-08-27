@@ -17,7 +17,6 @@ export default function ScraperTab() {
   const [apify, setApify] = useState<ApifySettingsOut | null>(null)
   const [provider, setProvider] = useState('')
   const [actorId, setActorId] = useState('')
-  const [apifyToken, setApifyToken] = useState('')
   const [enrichmentEnabled, setEnrichmentEnabled] = useState(false)
   const [keys, setKeys] = useState({ bright_data_api_key: '', scrape_creators_api_key: '' })
   const [error, setError] = useState<string | null>(null)
@@ -46,12 +45,9 @@ export default function ScraperTab() {
     try {
       setIsSavingApify(true)
       setError(null)
-      const fields: Record<string, string> = { actor_id: actorId }
-      if (apifyToken) fields.apify_token = apifyToken
 
-      const updated = await updateApifySettings(fields)
+      const updated = await updateApifySettings({ actor_id: actorId })
       setApify(updated.apify)
-      setApifyToken('')
       alert('Apify settings updated successfully!')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update Apify settings')
@@ -128,18 +124,10 @@ export default function ScraperTab() {
           <p className="help-text">The Apify actor used to scrape Facebook Marketplace listings.</p>
         </div>
 
-        <div className="config-item">
-          <label htmlFor="apify-token">
-            Apify API Token {apify.apify_token_masked && <span className="masked-value">({apify.apify_token_masked})</span>}
-          </label>
-          <input
-            id="apify-token"
-            type="password"
-            placeholder={apify.apify_token_masked ? 'Unchanged' : 'Not set'}
-            value={apifyToken}
-            onChange={(e) => setApifyToken(e.target.value)}
-          />
-        </div>
+        <p className="help-text">
+          Apify API tokens are managed on the Apify Accounts tab, which supports configuring more than one
+          account with automatic failover.
+        </p>
 
         <button className="save-button" onClick={handleSaveApify} disabled={isSavingApify}>
           {isSavingApify ? 'Saving...' : 'Save Apify Settings'}

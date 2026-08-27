@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchUsage } from '../../api/client'
-import type { UsageOut } from '../../api/types'
+import type { ApifyAccountUsageOut, UsageOut } from '../../api/types'
 
 function formatUsd(value: number | null): string {
   if (value == null) return '—'
@@ -44,37 +44,14 @@ export default function UsageTab() {
     return <div className="admin-section"><p>Loading...</p></div>
   }
 
-  const apify = usage.apify
-  const usedPct = apify.used_usd != null && apify.limit_usd ? Math.min(100, (apify.used_usd / apify.limit_usd) * 100) : null
-
   return (
     <>
       <div className="admin-section">
         <h2>Apify</h2>
-        {!apify.configured && <p className="help-text">No Apify token configured — set one in the Apify tab.</p>}
-        {apify.error && <div className="error-message">Couldn't reach Apify: {apify.error}</div>}
-        {apify.configured && !apify.error && (
-          <div className="settings-form">
-            <div className="usage-summary">
-              <span>{formatUsd(apify.used_usd)} used</span>
-              <span className="usage-summary-sep">/</span>
-              <span>{formatUsd(apify.limit_usd)} monthly limit</span>
-            </div>
-            {usedPct != null && (
-              <div className="usage-bar">
-                <div
-                  className={`usage-bar-fill ${usedPct >= 90 ? 'usage-bar-fill-high' : usedPct >= 60 ? 'usage-bar-fill-mid' : ''}`}
-                  style={{ width: `${usedPct}%` }}
-                />
-              </div>
-            )}
-            {apify.cycle_start && apify.cycle_end && (
-              <p className="help-text">
-                Apify billing cycle (not calendar month): {new Date(apify.cycle_start).toLocaleDateString()} – {new Date(apify.cycle_end).toLocaleDateString()}
-              </p>
-            )}
-          </div>
+        {usage.apify.length === 0 && (
+          <p className="help-text">No Apify accounts configured — add one in the Apify Accounts tab.</p>
         )}
+        {usage.apify.map(account => <ApifyAccountUsageCard key={account.account_id} account={account} />)}
       </div>
 
       <div className="admin-section">
@@ -132,6 +109,40 @@ export default function UsageTab() {
         <UsageTable rows={usage.llm_all_time} />
       </div>
     </>
+  )
+}
+
+function ApifyAccountUsageCard({ account }: { account: ApifyAccountUsageOut }) {
+  const usedPct =
+    account.used_usd != null && account.limit_usd ? Math.min(100, (account.used_usd / account.limit_usd) * 100) : null
+
+  return (
+    <div className="settings-form">
+      <h3 className="usage-subheading">{account.label}</h3>
+      {account.error && <div className="error-message">Couldn't reach Apify: {account.error}</div>}
+      {!account.error && (
+        <>
+          <div className="usage-summary">
+            <span>{formatUsd(account.used_usd)} used</span>
+            <span className="usage-summary-sep">/</span>
+            <span>{formatUsd(account.limit_usd)} monthly limit</span>
+          </div>
+          {usedPct != null && (
+            <div className="usage-bar">
+              <div
+                className={`usage-bar-fill ${usedPct >= 90 ? 'usage-bar-fill-high' : usedPct >= 60 ? 'usage-bar-fill-mid' : ''}`}
+                style={{ width: `${usedPct}%` }}
+              />
+            </div>
+          )}
+          {account.cycle_start && account.cycle_end && (
+            <p className="help-text">
+              Apify billing cycle (not calendar month): {new Date(account.cycle_start).toLocaleDateString()} – {new Date(account.cycle_end).toLocaleDateString()}
+            </p>
+          )}
+        </>
+      )}
+    </div>
   )
 }
 

@@ -49,14 +49,11 @@ def test_patch_llm_settings_leaves_unspecified_fields_unchanged(client):
 
 
 def test_patch_apify_settings(client):
-    response = client.patch(
-        "/api/admin/settings/apify", json={"apify_token": "fake-token-1234", "actor_id": "custom/actor"}
-    )
+    response = client.patch("/api/admin/settings/apify", json={"actor_id": "custom/actor"})
 
     assert response.status_code == 200
     body = response.json()["apify"]
     assert body["actor_id"] == "custom/actor"
-    assert "1234" in body["apify_token_masked"]
 
 
 def test_patch_scraper_settings_switches_provider(client):

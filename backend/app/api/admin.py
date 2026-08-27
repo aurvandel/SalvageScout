@@ -22,7 +22,7 @@ from app.schemas.app_settings import (
     mask_secret,
 )
 from app.schemas.system_status import LLMStatusOut, ScraperStatusOut, SystemStatusOut, LogEntryOut, LogsOut
-from app.schemas.usage import ApifyUsageOut, BrightDataUsageOut, LLMProviderUsageOut, ScrapeCreatorsUsageOut, UsageOut
+from app.schemas.usage import ApifyAccountUsageOut, BrightDataUsageOut, LLMProviderUsageOut, ScrapeCreatorsUsageOut, UsageOut
 from app.pipeline import run_pipeline_for_filter
 from app.scorer.pricing import estimate_cost_usd
 from app.scorer.registry import get_available_providers, get_available_models, get_scorer
@@ -31,7 +31,7 @@ from app.scraper.apify_client import get_account_usage
 from app.scraper.bright_data_backend import get_account_usage as get_bright_data_usage
 from app.scraper.scrape_creators_backend import get_account_usage as get_scrape_creators_usage
 from app.scraper.registry import get_available_scraper_providers, supports_search_mode
-from app.settings_service import get_api_key_for_provider, get_app_settings
+from app.settings_service import get_api_key_for_provider, get_app_settings, get_apify_accounts
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -124,7 +124,6 @@ def _settings_out(db: Session, config) -> AppSettingsOut:
             provider_models={provider: get_available_models(provider) for provider in providers},
         ),
         apify=ApifySettingsOut(
-            apify_token_masked=mask_secret(config.apify_token),
             actor_id=config.apify_actor_id,
         ),
         scraper=ScraperSettingsOut(
@@ -191,8 +190,6 @@ def update_apify_settings(payload: ApifySettingsIn, db: Session = Depends(get_db
     config = get_app_settings(db)
     fields = payload.model_dump(exclude_unset=True)
 
-    if "apify_token" in fields:
-        config.apify_token = fields["apify_token"] or None
     if "actor_id" in fields and fields["actor_id"]:
         config.apify_actor_id = fields["actor_id"]
 
@@ -359,16 +356,18 @@ def _aggregate_llm_usage(query) -> list[LLMProviderUsageOut]:
 def get_usage(db: Session = Depends(get_db)):
     config = get_app_settings(db)
 
-    apify_usage = ApifyUsageOut(configured=bool(config.apify_token))
-    if config.apify_token:
+    apify_usage = []
+    for account in get_apify_accounts(db):
+        account_usage = ApifyAccountUsageOut(account_id=account.id, label=account.label)
         try:
-            data = get_account_usage(config.apify_token)
-            apify_usage.used_usd = data["used_usd"]
-            apify_usage.limit_usd = data["limit_usd"]
-            apify_usage.cycle_start = data["cycle_start"]
-            apify_usage.cycle_end = data["cycle_end"]
+            data = get_account_usage(account.api_token)
+            account_usage.used_usd = data["used_usd"]
+            account_usage.limit_usd = data["limit_usd"]
+            account_usage.cycle_start = data["cycle_start"]
+            account_usage.cycle_end = data["cycle_end"]
         except Exception as e:
-            apify_usage.error = str(e)
+            account_usage.error = str(e)
+        apify_usage.append(account_usage)
 
     scrape_creators_usage = ScrapeCreatorsUsageOut(configured=bool(config.scrape_creators_api_key))
     if config.scrape_creators_api_key:
@@ -416,13 +415,27 @@ def get_system_status(db: Session = Depends(get_db)):
         except Exception as e:
             llm_results.append(LLMStatusOut(provider=provider, configured=True, status="error", error=str(e)))
 
-    scraper_checks = [
-        ("apify", config.apify_token, get_account_usage),
+    scraper_results = []
+
+    apify_accounts = get_apify_accounts(db)
+    if not apify_accounts:
+        scraper_results.append(ScraperStatusOut(provider="apify", configured=False, status="not_configured"))
+    for account in apify_accounts:
+        try:
+            get_account_usage(account.api_token)
+            scraper_results.append(
+                ScraperStatusOut(provider="apify", configured=True, status="connected", label=account.label)
+            )
+        except Exception as e:
+            scraper_results.append(
+                ScraperStatusOut(provider="apify", configured=True, status="error", error=str(e), label=account.label)
+            )
+
+    other_scraper_checks = [
         ("scrape_creators", config.scrape_creators_api_key, get_scrape_creators_usage),
         ("bright_data", config.bright_data_api_key, get_bright_data_usage),
     ]
-    scraper_results = []
-    for provider, api_key, check_fn in scraper_checks:
+    for provider, api_key, check_fn in other_scraper_checks:
         if not api_key:
             scraper_results.append(ScraperStatusOut(provider=provider, configured=False, status="not_configured"))
             continue

@@ -3,12 +3,27 @@ from decimal import Decimal
 import pytest
 from unittest.mock import MagicMock
 
-from app.scraper.apify_client import CURIOUS_CODER_ACTOR_ID, ACTOR_ID, fetch_listings, get_account_usage
+from apify_client.errors import ApifyApiError
+
+from app.scraper.apify_client import (
+    ACTOR_ID,
+    CURIOUS_CODER_ACTOR_ID,
+    ApifyFailoverError,
+    ApifyRunFailedError,
+    fetch_listings,
+    fetch_listings_with_failover,
+    get_account_usage,
+)
+
+
+def _make_apify_api_error(status_code: int) -> ApifyApiError:
+    response = MagicMock(status_code=status_code, text="error", json=MagicMock(return_value={}))
+    return ApifyApiError(response, 1)
 
 
 def test_fetch_listings_calls_actor_with_expected_input(mocker):
     mock_client = MagicMock()
-    mock_run = MagicMock(default_dataset_id="dataset123")
+    mock_run = MagicMock(default_dataset_id="dataset123", status="SUCCEEDED")
     mock_client.actor.return_value.call.return_value = mock_run
     mock_client.dataset.return_value.iterate_items.return_value = iter([{"id": "1"}, {"id": "2"}])
     mocker.patch("app.scraper.apify_client.ApifyClient", return_value=mock_client)
@@ -31,7 +46,7 @@ def test_fetch_listings_calls_actor_with_expected_input(mocker):
 
 def test_fetch_listings_can_disable_details(mocker):
     mock_client = MagicMock()
-    mock_client.actor.return_value.call.return_value = MagicMock(default_dataset_id="d")
+    mock_client.actor.return_value.call.return_value = MagicMock(default_dataset_id="d", status="SUCCEEDED")
     mock_client.dataset.return_value.iterate_items.return_value = iter([])
     mocker.patch("app.scraper.apify_client.ApifyClient", return_value=mock_client)
 
@@ -43,7 +58,7 @@ def test_fetch_listings_can_disable_details(mocker):
 
 def test_fetch_listings_uses_custom_actor_id(mocker):
     mock_client = MagicMock()
-    mock_client.actor.return_value.call.return_value = MagicMock(default_dataset_id="d")
+    mock_client.actor.return_value.call.return_value = MagicMock(default_dataset_id="d", status="SUCCEEDED")
     mock_client.dataset.return_value.iterate_items.return_value = iter([])
     mocker.patch("app.scraper.apify_client.ApifyClient", return_value=mock_client)
 
@@ -54,7 +69,7 @@ def test_fetch_listings_uses_custom_actor_id(mocker):
 
 def test_fetch_listings_uses_curious_coder_input_shape(mocker):
     mock_client = MagicMock()
-    mock_client.actor.return_value.call.return_value = MagicMock(default_dataset_id="d")
+    mock_client.actor.return_value.call.return_value = MagicMock(default_dataset_id="d", status="SUCCEEDED")
     mock_client.dataset.return_value.iterate_items.return_value = iter([])
     mocker.patch("app.scraper.apify_client.ApifyClient", return_value=mock_client)
 
@@ -78,6 +93,17 @@ def test_fetch_listings_uses_curious_coder_input_shape(mocker):
 def test_fetch_listings_raises_when_token_missing():
     with pytest.raises(RuntimeError, match="Apify token"):
         fetch_listings("https://example.com", results_limit=5, apify_token=None)
+
+
+def test_fetch_listings_raises_when_run_not_succeeded(mocker):
+    mock_client = MagicMock()
+    mock_client.actor.return_value.call.return_value = MagicMock(
+        default_dataset_id="d", status="ABORTED", status_message="Not enough usage credits"
+    )
+    mocker.patch("app.scraper.apify_client.ApifyClient", return_value=mock_client)
+
+    with pytest.raises(ApifyRunFailedError, match="ABORTED"):
+        fetch_listings("https://example.com", results_limit=5, apify_token="fake-token")
 
 
 def test_get_account_usage_reads_limits(mocker):
@@ -105,3 +131,85 @@ def test_get_account_usage_reads_limits(mocker):
 def test_get_account_usage_raises_when_token_missing():
     with pytest.raises(RuntimeError, match="Apify token"):
         get_account_usage(None)
+
+
+def test_fetch_listings_with_failover_succeeds_on_first_account(mocker):
+    mock_fetch = mocker.patch("app.scraper.apify_client.fetch_listings", return_value=[{"id": "1"}])
+
+    items, account_id, attempts = fetch_listings_with_failover(
+        "https://example.com", 10, [(1, "token-a"), (2, "token-b")]
+    )
+
+    assert items == [{"id": "1"}]
+    assert account_id == 1
+    assert attempts == [(1, None)]
+    mock_fetch.assert_called_once()
+
+
+def test_fetch_listings_with_failover_tries_next_account_on_auth_error(mocker):
+    mocker.patch(
+        "app.scraper.apify_client.fetch_listings", side_effect=[_make_apify_api_error(401), [{"id": "2"}]]
+    )
+
+    items, account_id, attempts = fetch_listings_with_failover(
+        "https://example.com", 10, [(1, "token-a"), (2, "token-b")]
+    )
+
+    assert items == [{"id": "2"}]
+    assert account_id == 2
+    assert attempts[0][0] == 1 and attempts[0][1] is not None
+    assert attempts[1] == (2, None)
+
+
+def test_fetch_listings_with_failover_tries_next_account_on_rate_limit(mocker):
+    mocker.patch(
+        "app.scraper.apify_client.fetch_listings", side_effect=[_make_apify_api_error(429), [{"id": "2"}]]
+    )
+
+    _items, account_id, _attempts = fetch_listings_with_failover(
+        "https://example.com", 10, [(1, "token-a"), (2, "token-b")]
+    )
+
+    assert account_id == 2
+
+
+def test_fetch_listings_with_failover_tries_next_account_on_run_failed(mocker):
+    mocker.patch(
+        "app.scraper.apify_client.fetch_listings",
+        side_effect=[ApifyRunFailedError("ABORTED", "insufficient funds"), [{"id": "2"}]],
+    )
+
+    _items, account_id, attempts = fetch_listings_with_failover(
+        "https://example.com", 10, [(1, "token-a"), (2, "token-b")]
+    )
+
+    assert account_id == 2
+    assert "ABORTED" in attempts[0][1]
+
+
+def test_fetch_listings_with_failover_does_not_fail_over_on_bad_request(mocker):
+    mock_fetch = mocker.patch("app.scraper.apify_client.fetch_listings", side_effect=_make_apify_api_error(400))
+
+    with pytest.raises(ApifyFailoverError) as exc_info:
+        fetch_listings_with_failover("https://example.com", 10, [(1, "token-a"), (2, "token-b")])
+
+    mock_fetch.assert_called_once()
+    # Only account 1 was attempted (fail-fast), but its outcome is still
+    # recorded so the caller can write back last_error for it.
+    assert exc_info.value.attempts[0][0] == 1
+    assert exc_info.value.attempts[0][1] is not None
+    assert len(exc_info.value.attempts) == 1
+
+
+def test_fetch_listings_with_failover_raises_when_all_accounts_fail(mocker):
+    mocker.patch("app.scraper.apify_client.fetch_listings", side_effect=_make_apify_api_error(401))
+
+    with pytest.raises(ApifyFailoverError, match="All 2 configured Apify account") as exc_info:
+        fetch_listings_with_failover("https://example.com", 10, [(1, "token-a"), (2, "token-b")])
+
+    assert [account_id for account_id, _ in exc_info.value.attempts] == [1, 2]
+
+
+def test_fetch_listings_with_failover_raises_when_no_accounts():
+    with pytest.raises(RuntimeError, match="No Apify accounts"):
+        fetch_listings_with_failover("https://example.com", 10, [])
