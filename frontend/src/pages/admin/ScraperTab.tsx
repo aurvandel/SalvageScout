@@ -7,6 +7,11 @@ const PROVIDER_LABELS: Record<string, string> = {
   scrape_creators: 'ScrapeCreators',
 }
 
+const KNOWN_ACTOR_IDS = [
+  { id: 'apify/facebook-marketplace-scraper', label: 'Official — $2.60-$5.00/1K listings' },
+  { id: 'curious_coder/facebook-marketplace', label: 'curious_coder — $0.50-$1.00/1K listings, cheaper' },
+]
+
 export default function ScraperTab() {
   const [scraper, setScraper] = useState<ScraperSettingsOut | null>(null)
   const [apify, setApify] = useState<ApifySettingsOut | null>(null)
@@ -111,9 +116,15 @@ export default function ScraperTab() {
           <input
             id="actor-id"
             type="text"
+            list="actor-id-options"
             value={actorId}
             onChange={(e) => setActorId(e.target.value)}
           />
+          <datalist id="actor-id-options">
+            {KNOWN_ACTOR_IDS.map(({ id, label }) => (
+              <option key={id} value={id}>{label}</option>
+            ))}
+          </datalist>
           <p className="help-text">The Apify actor used to scrape Facebook Marketplace listings.</p>
         </div>
 

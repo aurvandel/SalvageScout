@@ -175,6 +175,21 @@ describe("ScraperTab", () => {
     await waitFor(() => { expect(updateApifySettings).toHaveBeenCalledWith({ actor_id: "new-actor-456" }) })
   })
 
+  it("offers the known actor IDs as datalist suggestions while allowing free text", async () => {
+    vi.mocked(fetchSettings).mockResolvedValue({
+      scraper: baseScraper, apify: baseApify, llm: {} as any, notifications: {} as any,
+    })
+    const { container } = render(<ScraperTab />)
+    await waitFor(() => { expect(screen.queryByText("Loading...")).not.toBeInTheDocument() })
+    const actorIdInput = screen.getByLabelText("Actor ID")
+    expect(actorIdInput).toHaveAttribute("list", "actor-id-options")
+    const optionValues = Array.from(
+      container.querySelectorAll("#actor-id-options option"),
+      (option) => (option as HTMLOptionElement).value
+    )
+    expect(optionValues).toEqual(["apify/facebook-marketplace-scraper", "curious_coder/facebook-marketplace"])
+  })
+
   it("calls updateApifySettings with token when provided", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       scraper: baseScraper, apify: baseApify, llm: {} as any, notifications: {} as any,
