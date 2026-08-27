@@ -26,3 +26,10 @@ def score_listing(
     )
     usage = TokenUsage(input_tokens=response.usage.input_tokens, output_tokens=response.usage.output_tokens)
     return response.parsed_output, usage
+
+
+def check_connection(api_key: str) -> None:
+    """Raises if the key is invalid or Anthropic is unreachable. Lists models
+    instead of scoring — costs no tokens."""
+    client = anthropic.Anthropic(api_key=api_key, timeout=5.0)
+    client.models.list(limit=1)

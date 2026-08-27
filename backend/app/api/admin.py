@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.db import get_db
-from app.models import SchedulerConfig, SearchFilter, ArenaRun, Listing, CriteriaProfile, Score
+from app.models import SchedulerConfig, SearchFilter, ArenaRun, Listing, CriteriaProfile, Score, LogEntry
 from app.schemas.scheduler_config import SchedulerConfigIn, SchedulerConfigOut
 from app.schemas.llm_config import ArenaRunIn, ArenaRunOut, ArenaScoreResult
 from app.schemas.app_settings import (
@@ -21,10 +21,12 @@ from app.schemas.app_settings import (
     ScraperSettingsOut,
     mask_secret,
 )
+from app.schemas.system_status import LLMStatusOut, ScraperStatusOut, SystemStatusOut, LogEntryOut, LogsOut
 from app.schemas.usage import ApifyUsageOut, BrightDataUsageOut, LLMProviderUsageOut, ScrapeCreatorsUsageOut, UsageOut
 from app.pipeline import run_pipeline_for_filter
 from app.scorer.pricing import estimate_cost_usd
 from app.scorer.registry import get_available_providers, get_available_models, get_scorer
+from app.scorer.registry import check_connection as check_llm_connection
 from app.scraper.apify_client import get_account_usage
 from app.scraper.bright_data_backend import get_account_usage as get_bright_data_usage
 from app.scraper.scrape_creators_backend import get_account_usage as get_scrape_creators_usage
@@ -395,4 +397,65 @@ def get_usage(db: Session = Depends(get_db)):
         bright_data=bright_data_usage,
         llm_this_month=_aggregate_llm_usage(db.query(Score).filter(Score.created_at >= month_start)),
         llm_all_time=_aggregate_llm_usage(db.query(Score)),
+    )
+
+
+@router.get("/system-status", response_model=SystemStatusOut)
+def get_system_status(db: Session = Depends(get_db)):
+    config = get_app_settings(db)
+
+    llm_results = []
+    for provider in get_available_providers():
+        api_key = get_api_key_for_provider(config, provider)
+        if not api_key:
+            llm_results.append(LLMStatusOut(provider=provider, configured=False, status="not_configured"))
+            continue
+        try:
+            check_llm_connection(provider, api_key)
+            llm_results.append(LLMStatusOut(provider=provider, configured=True, status="connected"))
+        except Exception as e:
+            llm_results.append(LLMStatusOut(provider=provider, configured=True, status="error", error=str(e)))
+
+    scraper_checks = [
+        ("apify", config.apify_token, get_account_usage),
+        ("scrape_creators", config.scrape_creators_api_key, get_scrape_creators_usage),
+        ("bright_data", config.bright_data_api_key, get_bright_data_usage),
+    ]
+    scraper_results = []
+    for provider, api_key, check_fn in scraper_checks:
+        if not api_key:
+            scraper_results.append(ScraperStatusOut(provider=provider, configured=False, status="not_configured"))
+            continue
+        try:
+            check_fn(api_key)
+            scraper_results.append(ScraperStatusOut(provider=provider, configured=True, status="connected"))
+        except Exception as e:
+            scraper_results.append(ScraperStatusOut(provider=provider, configured=True, status="error", error=str(e)))
+
+    return SystemStatusOut(llm=llm_results, scrapers=scraper_results)
+
+
+@router.get("/logs", response_model=LogsOut)
+def get_logs(since_id: int = 0, limit: int = 500, db: Session = Depends(get_db)):
+    """Polled by the admin panel's live log viewer. since_id=0 returns the most
+    recent `limit` lines; a nonzero since_id returns everything newer than it,
+    so the client can advance from the server-reported last_id each poll."""
+    query = db.query(LogEntry)
+    if since_id:
+        rows = query.filter(LogEntry.id > since_id).order_by(LogEntry.id).limit(limit).all()
+    else:
+        rows = list(reversed(query.order_by(LogEntry.id.desc()).limit(limit).all()))
+
+    return LogsOut(
+        logs=[
+            LogEntryOut(
+                id=row.id,
+                created_at=row.created_at.isoformat(),
+                level=row.level,
+                logger_name=row.logger_name,
+                message=row.message,
+            )
+            for row in rows
+        ],
+        last_id=rows[-1].id if rows else since_id,
     )

@@ -28,6 +28,10 @@ vi.mock("./admin/ArenaTab", () => ({
   default: () => <div data-testid="arena-tab">Arena Tab</div>,
 }))
 
+vi.mock("./admin/StatusTab", () => ({
+  default: () => <div data-testid="status-tab">Status Tab</div>,
+}))
+
 describe("AdminPanel", () => {
   it("renders the admin panel title", () => {
     render(<AdminPanel />)
@@ -115,6 +119,15 @@ describe("AdminPanel", () => {
     const arenaButton = screen.getByRole("button", { name: "Arena" })
     await user.click(arenaButton)
     expect(screen.getByTestId("arena-tab")).toBeInTheDocument()
+    expect(screen.queryByTestId("llm-tab")).not.toBeInTheDocument()
+  })
+
+  it("switches to Status tab when clicked", async () => {
+    const user = userEvent.setup()
+    render(<AdminPanel />)
+    const statusButton = screen.getByRole("button", { name: "Status" })
+    await user.click(statusButton)
+    expect(screen.getByTestId("status-tab")).toBeInTheDocument()
     expect(screen.queryByTestId("llm-tab")).not.toBeInTheDocument()
   })
 

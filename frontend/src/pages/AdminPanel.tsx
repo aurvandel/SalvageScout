@@ -7,6 +7,7 @@ import ScheduleTab from './admin/ScheduleTab'
 import ArenaTab from './admin/ArenaTab'
 import PromptsTab from './admin/PromptsTab'
 import UsageTab from './admin/UsageTab'
+import StatusTab from './admin/StatusTab'
 import './AdminPanel.css'
 
 const TABS = [
@@ -18,6 +19,7 @@ const TABS = [
   { id: 'search', label: 'Search Filters' },
   { id: 'schedule', label: 'Schedule' },
   { id: 'arena', label: 'Arena' },
+  { id: 'status', label: 'Status' },
 ] as const
 
 type TabId = typeof TABS[number]['id']
@@ -50,6 +52,7 @@ export default function AdminPanel() {
         {activeTab === 'search' && <SearchFiltersTab />}
         {activeTab === 'schedule' && <ScheduleTab />}
         {activeTab === 'arena' && <ArenaTab />}
+        {activeTab === 'status' && <StatusTab />}
       </div>
     </div>
   )

@@ -5,6 +5,9 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api import admin, criteria_profiles, listings, pipeline, search_filters
 from app.config import settings
+from app.log_capture import install_log_capture
+
+install_log_capture()
 
 logging.basicConfig(level=logging.INFO)
 

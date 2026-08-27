@@ -203,3 +203,37 @@ export interface UsageOut {
   llm_this_month: LLMProviderUsageOut[]
   llm_all_time: LLMProviderUsageOut[]
 }
+
+export type ConnectionStatus = 'connected' | 'error' | 'not_configured'
+
+export interface LLMStatusOut {
+  provider: string
+  configured: boolean
+  status: ConnectionStatus
+  error: string | null
+}
+
+export interface ScraperStatusOut {
+  provider: string
+  configured: boolean
+  status: ConnectionStatus
+  error: string | null
+}
+
+export interface SystemStatusOut {
+  llm: LLMStatusOut[]
+  scrapers: ScraperStatusOut[]
+}
+
+export interface LogEntryOut {
+  id: number
+  created_at: string
+  level: string
+  logger_name: string
+  message: string
+}
+
+export interface LogsOut {
+  logs: LogEntryOut[]
+  last_id: number
+}
