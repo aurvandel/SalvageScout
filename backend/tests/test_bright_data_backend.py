@@ -171,7 +171,7 @@ def test_enrich_listings_never_overwrites_identity_fields(monkeypatch):
 @respx.mock
 def test_get_account_usage_returns_balance_and_pending():
     respx.get("https://api.brightdata.com/customer/balance").mock(
-        return_value=httpx.Response(200, json={"balance": 42.5, "pending_balance": 1.25})
+        return_value=httpx.Response(200, json={"balance": 42.5, "credit": 0, "prepayment": 0, "pending_costs": 1.25})
     )
 
     result = get_account_usage("fake-key")
