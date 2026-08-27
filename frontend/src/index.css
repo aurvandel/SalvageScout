@@ -510,12 +510,27 @@ a {
   }
 
   .feed-toolbar-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .view-tabs {
+    justify-content: space-between;
+  }
+
+  .view-tab {
+    flex: 1;
+  }
+
+  .feed-toolbar label {
     justify-content: space-between;
   }
 
   .feed-toolbar input,
   .feed-toolbar select {
     font-size: 16px;
+    min-width: 0;
+    flex: 1;
   }
 
   .listing-grid {
