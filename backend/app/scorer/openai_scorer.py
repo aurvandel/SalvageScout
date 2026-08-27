@@ -47,3 +47,10 @@ def score_listing(
         output_tokens=response.usage.completion_tokens,
     )
     return ScoreResult(**result_json), usage
+
+
+def check_connection(api_key: str) -> None:
+    """Raises if the key is invalid or OpenAI is unreachable. Lists models
+    instead of scoring — costs no tokens."""
+    client = openai.OpenAI(api_key=api_key, timeout=5.0)
+    client.models.list()

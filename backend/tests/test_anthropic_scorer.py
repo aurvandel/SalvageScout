@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.models import CriteriaProfile, Listing
-from app.scorer.anthropic_scorer import DEFAULT_MODEL, score_listing
+from app.scorer.anthropic_scorer import DEFAULT_MODEL, check_connection, score_listing
 from app.scorer.schemas import ScoreResult
 
 
@@ -59,3 +59,22 @@ def test_score_listing_with_custom_model(mocker):
 def test_score_listing_raises_when_api_key_missing():
     with pytest.raises(RuntimeError, match="Anthropic API key"):
         score_listing(_listing(), _criteria_profile(), api_key=None)
+
+
+def test_check_connection_lists_models(mocker):
+    mock_client = MagicMock()
+    mock_anthropic = mocker.patch("app.scorer.anthropic_scorer.anthropic.Anthropic", return_value=mock_client)
+
+    check_connection("fake-anthropic-key")
+
+    mock_anthropic.assert_called_once_with(api_key="fake-anthropic-key", timeout=5.0)
+    mock_client.models.list.assert_called_once_with(limit=1)
+
+
+def test_check_connection_raises_on_invalid_key(mocker):
+    mock_client = MagicMock()
+    mock_client.models.list.side_effect = RuntimeError("invalid x-api-key")
+    mocker.patch("app.scorer.anthropic_scorer.anthropic.Anthropic", return_value=mock_client)
+
+    with pytest.raises(RuntimeError, match="invalid x-api-key"):
+        check_connection("bad-key")

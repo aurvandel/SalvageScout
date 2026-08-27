@@ -10,6 +10,8 @@ import type {
   CriteriaProfileIn,
   CriteriaProfileOut,
   UsageOut,
+  SystemStatusOut,
+  LogsOut,
 } from './types'
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -185,6 +187,14 @@ export function activateCriteriaProfile(profileId: number): Promise<CriteriaProf
 
 export function fetchUsage(): Promise<UsageOut> {
   return request<UsageOut>('/api/admin/usage')
+}
+
+export function fetchSystemStatus(): Promise<SystemStatusOut> {
+  return request<SystemStatusOut>('/api/admin/system-status')
+}
+
+export function fetchLogs(sinceId = 0): Promise<LogsOut> {
+  return request<LogsOut>(`/api/admin/logs?since_id=${sinceId}`)
 }
 
 export async function runArenaTest(params: {

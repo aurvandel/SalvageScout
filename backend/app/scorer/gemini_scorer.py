@@ -51,3 +51,11 @@ def score_listing(
         output_tokens=response.usage_metadata.candidates_token_count,
     )
     return ScoreResult(**result_dict), usage
+
+
+def check_connection(api_key: str) -> None:
+    """Raises if the key is invalid or Gemini is unreachable. Lists models
+    instead of scoring — costs no tokens. list_models() is lazy, so next()
+    is what actually forces the HTTP call."""
+    genai.configure(api_key=api_key)
+    next(iter(genai.list_models(request_options={"timeout": 5})))
