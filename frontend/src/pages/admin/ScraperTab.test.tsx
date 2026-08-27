@@ -23,7 +23,6 @@ const baseScraper = {
 
 const baseApify = {
   actor_id: "test-actor-123",
-  apify_token_masked: null,
 }
 
 describe("ScraperTab", () => {
@@ -53,13 +52,12 @@ describe("ScraperTab", () => {
   it("displays the masked keys when present", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       scraper: { ...baseScraper, bright_data_api_key_masked: "(***bd)", scrape_creators_api_key_masked: "(***sc)" },
-      apify: { ...baseApify, apify_token_masked: "(***token)" },
+      apify: baseApify,
       llm: {} as any, notifications: {} as any,
     })
     render(<ScraperTab />)
     await waitFor(() => { expect(screen.getByText(/\(\*\*\*bd\)/)).toBeInTheDocument() })
     expect(screen.getByText(/\(\*\*\*sc\)/)).toBeInTheDocument()
-    expect(screen.getByText(/\(\*\*\*token\)/)).toBeInTheDocument()
   })
 
   it("shows a warning when switching to a provider that can't consume url-mode filters", async () => {
@@ -157,12 +155,12 @@ describe("ScraperTab", () => {
     await waitFor(() => { expect(keyInput.value).toBe("") })
   })
 
-  it("calls updateApifySettings with correct payload when saving without token", async () => {
+  it("calls updateApifySettings with the actor id when saving", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       scraper: baseScraper, apify: baseApify, llm: {} as any, notifications: {} as any,
     })
     vi.mocked(updateApifySettings).mockResolvedValue({
-      scraper: baseScraper, apify: { actor_id: "new-actor-456", apify_token_masked: null }, llm: {} as any, notifications: {} as any,
+      scraper: baseScraper, apify: { actor_id: "new-actor-456" }, llm: {} as any, notifications: {} as any,
     })
     const user = userEvent.setup()
     render(<ScraperTab />)
@@ -190,23 +188,6 @@ describe("ScraperTab", () => {
     expect(optionValues).toEqual(["apify/facebook-marketplace-scraper", "curious_coder/facebook-marketplace"])
   })
 
-  it("calls updateApifySettings with token when provided", async () => {
-    vi.mocked(fetchSettings).mockResolvedValue({
-      scraper: baseScraper, apify: baseApify, llm: {} as any, notifications: {} as any,
-    })
-    vi.mocked(updateApifySettings).mockResolvedValue({
-      scraper: baseScraper, apify: { ...baseApify, apify_token_masked: "(***token)" }, llm: {} as any, notifications: {} as any,
-    })
-    const user = userEvent.setup()
-    render(<ScraperTab />)
-    await waitFor(() => { expect(screen.queryByText("Loading...")).not.toBeInTheDocument() })
-    const tokenInput = screen.getByLabelText("Apify API Token")
-    await user.type(tokenInput, "new-token-value")
-    const saveButton = screen.getByRole("button", { name: /save apify settings/i })
-    await user.click(saveButton)
-    await waitFor(() => { expect(updateApifySettings).toHaveBeenCalledWith({ actor_id: "test-actor-123", apify_token: "new-token-value" }) })
-  })
-
   it("displays error message when apify save fails", async () => {
     vi.mocked(fetchSettings).mockResolvedValue({
       scraper: baseScraper, apify: baseApify, llm: {} as any, notifications: {} as any,
@@ -219,23 +200,5 @@ describe("ScraperTab", () => {
     const saveButton = screen.getByRole("button", { name: /save apify settings/i })
     await user.click(saveButton)
     await waitFor(() => { expect(screen.getByText(errorMsg)).toBeInTheDocument() })
-  })
-
-  it("clears token input after successful apify save", async () => {
-    vi.mocked(fetchSettings).mockResolvedValue({
-      scraper: baseScraper, apify: baseApify, llm: {} as any, notifications: {} as any,
-    })
-    vi.mocked(updateApifySettings).mockResolvedValue({
-      scraper: baseScraper, apify: { ...baseApify, apify_token_masked: "(***token)" }, llm: {} as any, notifications: {} as any,
-    })
-    const user = userEvent.setup()
-    render(<ScraperTab />)
-    await waitFor(() => { expect(screen.queryByText("Loading...")).not.toBeInTheDocument() })
-    const tokenInput = screen.getByLabelText("Apify API Token") as HTMLInputElement
-    await user.type(tokenInput, "test-token")
-    expect(tokenInput.value).toBe("test-token")
-    const saveButton = screen.getByRole("button", { name: /save apify settings/i })
-    await user.click(saveButton)
-    await waitFor(() => { expect(tokenInput.value).toBe("") })
   })
 })

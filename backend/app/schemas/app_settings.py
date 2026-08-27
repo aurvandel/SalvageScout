@@ -29,12 +29,10 @@ class LLMSettingsIn(BaseModel):
 
 class ApifySettingsOut(BaseModel):
     actor_id: str
-    apify_token_masked: str | None
 
 
 class ApifySettingsIn(BaseModel):
     actor_id: str | None = None
-    apify_token: str | None = None
 
 
 class ScraperSettingsOut(BaseModel):

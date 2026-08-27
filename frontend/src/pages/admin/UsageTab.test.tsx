@@ -25,9 +25,9 @@ describe("UsageTab", () => {
     expect(screen.getByText("Loading...")).toBeInTheDocument()
   })
 
-  it("prompts to configure Apify when no token is set", async () => {
+  it("prompts to configure Apify when no accounts are set", async () => {
     vi.mocked(fetchUsage).mockResolvedValue({
-      apify: { configured: false, used_usd: null, limit_usd: null, cycle_start: null, cycle_end: null, error: null },
+      apify: [],
       scrape_creators: scrapeCreatorsNotConfigured,
       bright_data: brightDataNotConfigured,
       llm_this_month: emptyLLMRows,
@@ -35,20 +35,23 @@ describe("UsageTab", () => {
     })
     render(<UsageTab />)
     await waitFor(() => {
-      expect(screen.getByText(/no apify token configured/i)).toBeInTheDocument()
+      expect(screen.getByText(/no apify accounts configured/i)).toBeInTheDocument()
     })
   })
 
-  it("shows used vs limit when Apify is configured", async () => {
+  it("shows used vs limit for each Apify account", async () => {
     vi.mocked(fetchUsage).mockResolvedValue({
-      apify: {
-        configured: true,
-        used_usd: 12.5,
-        limit_usd: 300,
-        cycle_start: "2026-08-01T00:00:00Z",
-        cycle_end: "2026-08-31T23:59:59Z",
-        error: null,
-      },
+      apify: [
+        {
+          account_id: 1,
+          label: "Mine",
+          used_usd: 12.5,
+          limit_usd: 300,
+          cycle_start: "2026-08-01T00:00:00Z",
+          cycle_end: "2026-08-31T23:59:59Z",
+          error: null,
+        },
+      ],
       scrape_creators: scrapeCreatorsNotConfigured,
       bright_data: brightDataNotConfigured,
       llm_this_month: emptyLLMRows,
@@ -56,14 +59,17 @@ describe("UsageTab", () => {
     })
     render(<UsageTab />)
     await waitFor(() => {
+      expect(screen.getByText("Mine")).toBeInTheDocument()
       expect(screen.getByText("$12.50 used")).toBeInTheDocument()
       expect(screen.getByText("$300.00 monthly limit")).toBeInTheDocument()
     })
   })
 
-  it("surfaces an Apify API error without crashing", async () => {
+  it("surfaces an Apify account's API error without crashing", async () => {
     vi.mocked(fetchUsage).mockResolvedValue({
-      apify: { configured: true, used_usd: null, limit_usd: null, cycle_start: null, cycle_end: null, error: "boom" },
+      apify: [
+        { account_id: 1, label: "Mine", used_usd: null, limit_usd: null, cycle_start: null, cycle_end: null, error: "boom" },
+      ],
       scrape_creators: scrapeCreatorsNotConfigured,
       bright_data: brightDataNotConfigured,
       llm_this_month: emptyLLMRows,
@@ -77,7 +83,7 @@ describe("UsageTab", () => {
 
   it("renders per-model LLM spend rows", async () => {
     vi.mocked(fetchUsage).mockResolvedValue({
-      apify: { configured: false, used_usd: null, limit_usd: null, cycle_start: null, cycle_end: null, error: null },
+      apify: [],
       scrape_creators: scrapeCreatorsNotConfigured,
       bright_data: brightDataNotConfigured,
       llm_this_month: [
@@ -103,7 +109,7 @@ describe("UsageTab", () => {
 
   it("flags rows with scores older than token tracking", async () => {
     vi.mocked(fetchUsage).mockResolvedValue({
-      apify: { configured: false, used_usd: null, limit_usd: null, cycle_start: null, cycle_end: null, error: null },
+      apify: [],
       scrape_creators: scrapeCreatorsNotConfigured,
       bright_data: brightDataNotConfigured,
       llm_this_month: emptyLLMRows,
@@ -127,7 +133,7 @@ describe("UsageTab", () => {
 
   it("shows a message when there is no scoring activity", async () => {
     vi.mocked(fetchUsage).mockResolvedValue({
-      apify: { configured: false, used_usd: null, limit_usd: null, cycle_start: null, cycle_end: null, error: null },
+      apify: [],
       scrape_creators: scrapeCreatorsNotConfigured,
       bright_data: brightDataNotConfigured,
       llm_this_month: emptyLLMRows,
@@ -149,7 +155,7 @@ describe("UsageTab", () => {
 
   it("prompts to configure ScrapeCreators when no key is set", async () => {
     vi.mocked(fetchUsage).mockResolvedValue({
-      apify: { configured: false, used_usd: null, limit_usd: null, cycle_start: null, cycle_end: null, error: null },
+      apify: [],
       scrape_creators: scrapeCreatorsNotConfigured,
       bright_data: brightDataNotConfigured,
       llm_this_month: emptyLLMRows,
@@ -163,7 +169,7 @@ describe("UsageTab", () => {
 
   it("shows remaining credits and today's usage when ScrapeCreators is configured", async () => {
     vi.mocked(fetchUsage).mockResolvedValue({
-      apify: { configured: false, used_usd: null, limit_usd: null, cycle_start: null, cycle_end: null, error: null },
+      apify: [],
       scrape_creators: { configured: true, credits_remaining: 97, credits_used_today: 3, requests_today: 3, error: null },
       bright_data: brightDataNotConfigured,
       llm_this_month: emptyLLMRows,
@@ -178,7 +184,7 @@ describe("UsageTab", () => {
 
   it("surfaces a ScrapeCreators API error without crashing", async () => {
     vi.mocked(fetchUsage).mockResolvedValue({
-      apify: { configured: false, used_usd: null, limit_usd: null, cycle_start: null, cycle_end: null, error: null },
+      apify: [],
       scrape_creators: { configured: true, credits_remaining: null, credits_used_today: null, requests_today: null, error: "boom" },
       bright_data: brightDataNotConfigured,
       llm_this_month: emptyLLMRows,
@@ -192,7 +198,7 @@ describe("UsageTab", () => {
 
   it("prompts to configure Bright Data when no key is set", async () => {
     vi.mocked(fetchUsage).mockResolvedValue({
-      apify: { configured: false, used_usd: null, limit_usd: null, cycle_start: null, cycle_end: null, error: null },
+      apify: [],
       scrape_creators: scrapeCreatorsNotConfigured,
       bright_data: brightDataNotConfigured,
       llm_this_month: emptyLLMRows,
@@ -206,7 +212,7 @@ describe("UsageTab", () => {
 
   it("shows balance and pending charge when Bright Data is configured", async () => {
     vi.mocked(fetchUsage).mockResolvedValue({
-      apify: { configured: false, used_usd: null, limit_usd: null, cycle_start: null, cycle_end: null, error: null },
+      apify: [],
       scrape_creators: scrapeCreatorsNotConfigured,
       bright_data: { configured: true, balance_usd: 42.5, pending_balance_usd: 1.25, error: null },
       llm_this_month: emptyLLMRows,
@@ -221,7 +227,7 @@ describe("UsageTab", () => {
 
   it("surfaces a Bright Data API error without crashing", async () => {
     vi.mocked(fetchUsage).mockResolvedValue({
-      apify: { configured: false, used_usd: null, limit_usd: null, cycle_start: null, cycle_end: null, error: null },
+      apify: [],
       scrape_creators: scrapeCreatorsNotConfigured,
       bright_data: { configured: true, balance_usd: null, pending_balance_usd: null, error: "boom" },
       llm_this_month: emptyLLMRows,

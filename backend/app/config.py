@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=_ENV_FILE, extra="ignore")
 
     database_url: str
-    apify_token: str
+    apify_token: str | None = None
     anthropic_api_key: str
     openai_api_key: str | None = None
     gemini_api_key: str | None = None

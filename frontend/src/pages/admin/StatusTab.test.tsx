@@ -69,11 +69,26 @@ describe("StatusTab", () => {
   it("renders scraper statuses", async () => {
     vi.mocked(fetchSystemStatus).mockResolvedValue({
       llm: [],
-      scrapers: [{ provider: "apify", configured: true, status: "connected", error: null }],
+      scrapers: [{ provider: "apify", configured: true, status: "connected", error: null, label: null }],
     })
     render(<StatusTab />)
     await waitFor(() => {
       expect(screen.getByText("Apify")).toBeInTheDocument()
+    })
+  })
+
+  it("renders one row per Apify account with its label", async () => {
+    vi.mocked(fetchSystemStatus).mockResolvedValue({
+      llm: [],
+      scrapers: [
+        { provider: "apify", configured: true, status: "connected", error: null, label: "Mine" },
+        { provider: "apify", configured: true, status: "error", error: "boom", label: "Wife's" },
+      ],
+    })
+    render(<StatusTab />)
+    await waitFor(() => {
+      expect(screen.getByText(/Apify — Mine/)).toBeInTheDocument()
+      expect(screen.getByText(/Apify — Wife's/)).toBeInTheDocument()
     })
   })
 
@@ -185,7 +200,7 @@ describe("StatusTab", () => {
   it("shows distinct badge styling per LLM row and scraper row", async () => {
     vi.mocked(fetchSystemStatus).mockResolvedValue({
       llm: [{ provider: "anthropic", configured: true, status: "connected", error: null }],
-      scrapers: [{ provider: "bright_data", configured: true, status: "error", error: "boom" }],
+      scrapers: [{ provider: "bright_data", configured: true, status: "error", error: "boom", label: null }],
     })
     render(<StatusTab />)
     await waitFor(() => {

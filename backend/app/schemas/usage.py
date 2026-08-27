@@ -1,8 +1,9 @@
 from pydantic import BaseModel
 
 
-class ApifyUsageOut(BaseModel):
-    configured: bool
+class ApifyAccountUsageOut(BaseModel):
+    account_id: int
+    label: str
     used_usd: float | None = None
     limit_usd: float | None = None
     cycle_start: str | None = None
@@ -36,7 +37,7 @@ class LLMProviderUsageOut(BaseModel):
 
 
 class UsageOut(BaseModel):
-    apify: ApifyUsageOut
+    apify: list[ApifyAccountUsageOut]
     scrape_creators: ScrapeCreatorsUsageOut
     bright_data: BrightDataUsageOut
     llm_this_month: list[LLMProviderUsageOut]

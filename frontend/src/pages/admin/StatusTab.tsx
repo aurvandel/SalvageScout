@@ -136,9 +136,12 @@ export default function StatusTab() {
             <h3 className="usage-subheading">Scrapers</h3>
             <div className="filter-list">
               {status.scrapers.map(row => (
-                <div className="filter-row" key={row.provider}>
+                <div className="filter-row" key={`${row.provider}-${row.label ?? ''}`}>
                   <div className="filter-row-main">
-                    <strong>{SCRAPER_LABELS[row.provider] || row.provider}</strong>
+                    <strong>
+                      {SCRAPER_LABELS[row.provider] || row.provider}
+                      {row.label && ` — ${row.label}`}
+                    </strong>
                     <StatusBadge status={row.status} />
                   </div>
                   {row.error && <span className="filter-detail">{row.error}</span>}

@@ -12,6 +12,10 @@ vi.mock("./admin/ScraperTab", () => ({
   default: () => <div data-testid="scraper-tab">Scraper Tab</div>,
 }))
 
+vi.mock("./admin/ApifyAccountsTab", () => ({
+  default: () => <div data-testid="apify-accounts-tab">Apify Accounts Tab</div>,
+}))
+
 vi.mock("./admin/NotificationsTab", () => ({
   default: () => <div data-testid="notifications-tab">Notifications Tab</div>,
 }))
@@ -128,6 +132,15 @@ describe("AdminPanel", () => {
     const statusButton = screen.getByRole("button", { name: "Status" })
     await user.click(statusButton)
     expect(screen.getByTestId("status-tab")).toBeInTheDocument()
+    expect(screen.queryByTestId("llm-tab")).not.toBeInTheDocument()
+  })
+
+  it("switches to Apify Accounts tab when clicked", async () => {
+    const user = userEvent.setup()
+    render(<AdminPanel />)
+    const apifyAccountsButton = screen.getByRole("button", { name: "Apify Accounts" })
+    await user.click(apifyAccountsButton)
+    expect(screen.getByTestId("apify-accounts-tab")).toBeInTheDocument()
     expect(screen.queryByTestId("llm-tab")).not.toBeInTheDocument()
   })
 
