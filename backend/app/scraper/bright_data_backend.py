@@ -44,7 +44,7 @@ def get_account_usage(api_key: str) -> dict[str, Any]:
     if response.status_code >= 400:
         raise RuntimeError(f"Bright Data balance API returned {response.status_code}: {response.text.strip()[:200]}")
     data = response.json()
-    return {"balance_usd": data["balance"], "pending_balance_usd": data["pending_balance"]}
+    return {"balance_usd": data["balance"], "pending_balance_usd": data["pending_costs"]}
 
 
 def _parse_timestamp(value: str | None) -> datetime | None:
