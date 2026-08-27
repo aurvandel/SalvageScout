@@ -1,8 +1,12 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.api import admin, criteria_profiles, listings, pipeline, search_filters
 from app.config import settings
+
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title="SalvageScout")
 
