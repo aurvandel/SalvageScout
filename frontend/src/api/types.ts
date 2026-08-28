@@ -67,6 +67,19 @@ export interface TriggerSearchResponse {
   message: string
 }
 
+export type SearchStatusValue = 'idle' | 'running' | 'completed' | 'error'
+
+export interface SearchStatusOut {
+  status: SearchStatusValue
+  run_id: number
+  started_at: string | null
+  finished_at: string | null
+  filters_triggered: number
+  total_listings: number
+  new_listings: number
+  error_message: string | null
+}
+
 export interface LLMSettingsOut {
   provider: string
   model: string

@@ -1,14 +1,14 @@
 from sqlalchemy.orm import Session
 
-from app.models import Listing, SearchFilter
+from app.models import SearchFilter
 from app.scraper.bright_data_backend import enrich_listings
-from app.scraper.ingest import ingest_listings
+from app.scraper.ingest import IngestResult, ingest_listings
 from app.scraper.query_filter import filter_listings_by_query
 from app.scraper.registry import get_scraper, supports_search_mode
 from app.settings_service import get_app_settings
 
 
-def run_scrape(db: Session, search_filter: SearchFilter, results_limit: int = 20) -> list[Listing]:
+def run_scrape(db: Session, search_filter: SearchFilter, results_limit: int = 20) -> IngestResult:
     config = get_app_settings(db)
     provider = config.scraper_provider
 
