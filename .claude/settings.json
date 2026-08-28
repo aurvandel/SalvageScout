@@ -1,3 +1,16 @@
 {
-  "enableAllProjectMcpServers": true
+  "enableAllProjectMcpServers": true,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=\"$(jq -r \".tool_input.command\")\"; branch=\"$(git branch --show-current 2>/dev/null)\"; if [ \"$branch\" = \"main\" ] && printf \"%s\\n\" \"$cmd\" | grep -qE \"(^|[;&|]|&&|\\\\|\\\\|)[[:space:]]*git[[:space:]]+(commit|push)([[:space:]]|$)\"; then jq -n --arg reason \"Blocked: git commit/push directly on main. Create a feature branch first (see CLAUDE.md workflow / /feature-branch skill).\" \"{hookSpecificOutput:{hookEventName:\\\"PreToolUse\\\",permissionDecision:\\\"deny\\\",permissionDecisionReason:\\$reason}}\"; fi"
+          }
+        ]
+      }
+    ]
+  }
 }
