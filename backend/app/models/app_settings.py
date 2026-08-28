@@ -24,10 +24,18 @@ class AppSettings(Base):
     openai_api_key: Mapped[str | None] = mapped_column(String, nullable=True)
     gemini_api_key: Mapped[str | None] = mapped_column(String, nullable=True)
 
-    apify_token: Mapped[str | None] = mapped_column(String, nullable=True)
     apify_actor_id: Mapped[str] = mapped_column(
         String, nullable=False, default="apify/facebook-marketplace-scraper"
     )
+
+    scraper_provider: Mapped[str] = mapped_column(String, nullable=False, default="apify")
+    bright_data_api_key: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Bright Data isn't a selectable scraper_provider (its scraper is item-detail
+    # only — see registry.py) — this gates an optional post-discovery enrichment
+    # step instead, off by default since it's extra billed usage on top of the
+    # primary provider.
+    bright_data_enrichment_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    scrape_creators_api_key: Mapped[str | None] = mapped_column(String, nullable=True)
 
     discord_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     discord_webhook_url: Mapped[str | None] = mapped_column(String, nullable=True)

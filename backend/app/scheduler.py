@@ -5,10 +5,12 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from app.db import SessionLocal
+from app.log_capture import install_log_capture
 from app.models import SearchFilter, SchedulerConfig
 from app.pipeline import run_pipeline_for_filter
 
 logging.basicConfig(level=logging.INFO)
+install_log_capture()
 logger = logging.getLogger(__name__)
 
 DAILY_RESULTS_LIMIT = 20

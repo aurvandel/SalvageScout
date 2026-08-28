@@ -92,7 +92,26 @@ export interface LLMSettingsOut {
 
 export interface ApifySettingsOut {
   actor_id: string
-  apify_token_masked: string | null
+}
+
+export interface ApifyAccountOut {
+  id: number
+  label: string
+  api_token_masked: string | null
+  priority: number
+  is_active: boolean
+  last_used_at: string | null
+  last_error: string | null
+  last_error_at: string | null
+}
+
+export interface ScraperSettingsOut {
+  provider: string
+  available_providers: string[]
+  bright_data_api_key_masked: string | null
+  bright_data_enrichment_enabled: boolean
+  scrape_creators_api_key_masked: string | null
+  incompatible_filter_names: string[]
 }
 
 export interface NotificationSettingsOut {
@@ -107,6 +126,7 @@ export interface NotificationSettingsOut {
 export interface AppSettingsOut {
   llm: LLMSettingsOut
   apify: ApifySettingsOut
+  scraper: ScraperSettingsOut
   notifications: NotificationSettingsOut
 }
 
@@ -125,6 +145,11 @@ export interface SearchFilterOut {
   condition: string | null
   results_limit: number
   criteria_profile_id: number | null
+  sort_by: string | null
+  delivery_method: string | null
+  availability: string | null
+  latitude: number | null
+  longitude: number | null
 }
 
 export interface CriteriaProfileIn {
@@ -158,4 +183,82 @@ export interface ArenaRunOut {
   models: string[]
   results: ArenaScoreResult[]
   created_at: string
+}
+
+export interface ApifyAccountUsageOut {
+  account_id: number
+  label: string
+  used_usd: number | null
+  limit_usd: number | null
+  cycle_start: string | null
+  cycle_end: string | null
+  error: string | null
+}
+
+export interface ScrapeCreatorsUsageOut {
+  configured: boolean
+  credits_remaining: number | null
+  credits_used_today: number | null
+  requests_today: number | null
+  error: string | null
+}
+
+export interface BrightDataUsageOut {
+  configured: boolean
+  balance_usd: number | null
+  pending_balance_usd: number | null
+  error: string | null
+}
+
+export interface LLMProviderUsageOut {
+  provider: string
+  model: string
+  scored_count: number
+  priced_count: number
+  input_tokens: number
+  output_tokens: number
+  estimated_cost_usd: number | null
+}
+
+export interface UsageOut {
+  apify: ApifyAccountUsageOut[]
+  scrape_creators: ScrapeCreatorsUsageOut
+  bright_data: BrightDataUsageOut
+  llm_this_month: LLMProviderUsageOut[]
+  llm_all_time: LLMProviderUsageOut[]
+}
+
+export type ConnectionStatus = 'connected' | 'error' | 'not_configured'
+
+export interface LLMStatusOut {
+  provider: string
+  configured: boolean
+  status: ConnectionStatus
+  error: string | null
+}
+
+export interface ScraperStatusOut {
+  provider: string
+  configured: boolean
+  status: ConnectionStatus
+  error: string | null
+  label: string | null
+}
+
+export interface SystemStatusOut {
+  llm: LLMStatusOut[]
+  scrapers: ScraperStatusOut[]
+}
+
+export interface LogEntryOut {
+  id: number
+  created_at: string
+  level: string
+  logger_name: string
+  message: string
+}
+
+export interface LogsOut {
+  logs: LogEntryOut[]
+  last_id: number
 }

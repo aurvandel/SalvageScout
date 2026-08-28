@@ -1,5 +1,6 @@
 from app.models import Listing, ListingImage, SearchFilter
 from app.scraper.ingest import ingest_listings
+from app.scraper.normalize import normalize_listing
 
 
 def _make_search_filter(db):
@@ -10,13 +11,17 @@ def _make_search_filter(db):
     return sf
 
 
+def _normalized(raw_items):
+    return [normalize_listing(raw) for raw in raw_items]
+
+
 def test_ingest_creates_new_listings_and_downloads_images(db, raw_listings, monkeypatch):
     monkeypatch.setattr("app.scraper.ingest.download_images", lambda fb_id, urls: [
         {"local_path": f"/fake/{fb_id}/{i}.jpg", "position": i} for i in range(len(urls))
     ])
     sf = _make_search_filter(db)
 
-    result = ingest_listings(db, sf, raw_listings)
+    result = ingest_listings(db, sf, _normalized(raw_listings))
 
     assert len(result.listings) == 3
     assert result.new_count == 3
@@ -36,8 +41,8 @@ def test_ingest_is_idempotent_on_fb_listing_id(db, raw_listings, monkeypatch):
     monkeypatch.setattr("app.scraper.ingest.download_images", lambda fb_id, urls: [])
     sf = _make_search_filter(db)
 
-    first_result = ingest_listings(db, sf, raw_listings)
-    second_result = ingest_listings(db, sf, raw_listings)
+    first_result = ingest_listings(db, sf, _normalized(raw_listings))
+    second_result = ingest_listings(db, sf, _normalized(raw_listings))
 
     assert first_result.new_count == 3
     assert first_result.existing_count == 0
@@ -54,7 +59,7 @@ def test_ingest_updates_existing_listing_without_redownloading_images(db, raw_li
     )
     sf = _make_search_filter(db)
 
-    ingest_listings(db, sf, raw_listings)
+    ingest_listings(db, sf, _normalized(raw_listings))
     assert len(download_calls) == 3  # one call per new listing
 
     # Change price on one raw item to simulate a re-scrape picking up a price drop.
@@ -62,7 +67,7 @@ def test_ingest_updates_existing_listing_without_redownloading_images(db, raw_li
     crown_vic = next(item for item in updated if item["id"] == "839387795495137")
     crown_vic["listingPrice"] = {**crown_vic["listingPrice"], "amount": "1500.00"}
 
-    ingest_listings(db, sf, updated)
+    ingest_listings(db, sf, _normalized(updated))
 
     assert len(download_calls) == 3  # no new download calls on re-ingest
     refreshed = db.query(Listing).filter_by(fb_listing_id="839387795495137").one()
@@ -73,14 +78,32 @@ def test_ingest_updates_status_flags(db, raw_listing, monkeypatch):
     monkeypatch.setattr("app.scraper.ingest.download_images", lambda fb_id, urls: [])
     sf = _make_search_filter(db)
 
-    ingest_listings(db, sf, [raw_listing])
+    ingest_listings(db, sf, _normalized([raw_listing]))
 
     sold_version = dict(raw_listing)
     sold_version["isSold"] = True
     sold_version["isLive"] = False
 
-    ingest_listings(db, sf, [sold_version])
+    ingest_listings(db, sf, _normalized([sold_version]))
 
     refreshed = db.query(Listing).filter_by(fb_listing_id=raw_listing["id"]).one()
     assert refreshed.is_sold is True
     assert refreshed.is_live is False
+
+
+def test_ingest_does_not_null_out_fields_missing_from_a_later_provider(db, raw_listing, monkeypatch):
+    """A listing first seen via a provider that returns postal_code, then
+    re-seen via one that doesn't, should keep its original postal_code rather
+    than having it overwritten with None."""
+    monkeypatch.setattr("app.scraper.ingest.download_images", lambda fb_id, urls: [])
+    sf = _make_search_filter(db)
+
+    ingest_listings(db, sf, _normalized([raw_listing]))
+
+    sparser = normalize_listing(raw_listing)
+    sparser["postal_code"] = None
+
+    ingest_listings(db, sf, [sparser])
+
+    refreshed = db.query(Listing).filter_by(fb_listing_id=raw_listing["id"]).one()
+    assert refreshed.postal_code == "27893-3516"

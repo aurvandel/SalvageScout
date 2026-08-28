@@ -1,9 +1,12 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.db import get_db
-from app.models import SchedulerConfig, SearchFilter, ArenaRun, Listing, CriteriaProfile
+from app.models import SchedulerConfig, SearchFilter, ArenaRun, Listing, CriteriaProfile, Score, LogEntry
 from app.schemas.scheduler_config import SchedulerConfigIn, SchedulerConfigOut
 from app.schemas.llm_config import ArenaRunIn, ArenaRunOut, ArenaScoreResult
 from app.schemas.app_settings import (
@@ -14,11 +17,21 @@ from app.schemas.app_settings import (
     LLMSettingsOut,
     NotificationSettingsIn,
     NotificationSettingsOut,
+    ScraperSettingsIn,
+    ScraperSettingsOut,
     mask_secret,
 )
+from app.schemas.system_status import LLMStatusOut, ScraperStatusOut, SystemStatusOut, LogEntryOut, LogsOut
+from app.schemas.usage import ApifyAccountUsageOut, BrightDataUsageOut, LLMProviderUsageOut, ScrapeCreatorsUsageOut, UsageOut
 from app.pipeline import run_pipeline_for_filter
+from app.scorer.pricing import estimate_cost_usd
 from app.scorer.registry import get_available_providers, get_available_models, get_scorer
-from app.settings_service import get_api_key_for_provider, get_app_settings
+from app.scorer.registry import check_connection as check_llm_connection
+from app.scraper.apify_client import get_account_usage
+from app.scraper.bright_data_backend import get_account_usage as get_bright_data_usage
+from app.scraper.scrape_creators_backend import get_account_usage as get_scrape_creators_usage
+from app.scraper.registry import get_available_scraper_providers, supports_search_mode
+from app.settings_service import get_api_key_for_provider, get_app_settings, get_apify_accounts
 from app import search_status
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -118,7 +131,12 @@ def get_search_status():
     return search_status.get_status()
 
 
-def _settings_out(config) -> AppSettingsOut:
+def _incompatible_filter_names(db: Session, provider: str) -> list[str]:
+    active_filters = db.query(SearchFilter).filter_by(is_active=True).all()
+    return [f.name for f in active_filters if not supports_search_mode(provider, f.search_mode)]
+
+
+def _settings_out(db: Session, config) -> AppSettingsOut:
     providers = get_available_providers()
     return AppSettingsOut(
         llm=LLMSettingsOut(
@@ -131,8 +149,15 @@ def _settings_out(config) -> AppSettingsOut:
             provider_models={provider: get_available_models(provider) for provider in providers},
         ),
         apify=ApifySettingsOut(
-            apify_token_masked=mask_secret(config.apify_token),
             actor_id=config.apify_actor_id,
+        ),
+        scraper=ScraperSettingsOut(
+            provider=config.scraper_provider,
+            available_providers=get_available_scraper_providers(),
+            bright_data_api_key_masked=mask_secret(config.bright_data_api_key),
+            bright_data_enrichment_enabled=config.bright_data_enrichment_enabled,
+            scrape_creators_api_key_masked=mask_secret(config.scrape_creators_api_key),
+            incompatible_filter_names=_incompatible_filter_names(db, config.scraper_provider),
         ),
         notifications=NotificationSettingsOut(
             discord_enabled=config.discord_enabled,
@@ -148,7 +173,7 @@ def _settings_out(config) -> AppSettingsOut:
 @router.get("/settings", response_model=AppSettingsOut)
 def get_settings(db: Session = Depends(get_db)):
     config = get_app_settings(db)
-    return _settings_out(config)
+    return _settings_out(db, config)
 
 
 @router.patch("/settings/llm", response_model=AppSettingsOut)
@@ -182,7 +207,7 @@ def update_llm_settings(payload: LLMSettingsIn, db: Session = Depends(get_db)):
 
     db.commit()
     db.refresh(config)
-    return _settings_out(config)
+    return _settings_out(db, config)
 
 
 @router.patch("/settings/apify", response_model=AppSettingsOut)
@@ -190,14 +215,37 @@ def update_apify_settings(payload: ApifySettingsIn, db: Session = Depends(get_db
     config = get_app_settings(db)
     fields = payload.model_dump(exclude_unset=True)
 
-    if "apify_token" in fields:
-        config.apify_token = fields["apify_token"] or None
     if "actor_id" in fields and fields["actor_id"]:
         config.apify_actor_id = fields["actor_id"]
 
     db.commit()
     db.refresh(config)
-    return _settings_out(config)
+    return _settings_out(db, config)
+
+
+@router.patch("/settings/scraper", response_model=AppSettingsOut)
+def update_scraper_settings(payload: ScraperSettingsIn, db: Session = Depends(get_db)):
+    config = get_app_settings(db)
+    fields = payload.model_dump(exclude_unset=True)
+
+    provider = fields.get("provider", config.scraper_provider)
+    available_providers = get_available_scraper_providers()
+    if provider not in available_providers:
+        raise HTTPException(
+            status_code=400, detail=f"Unknown scraper provider {provider!r}. Available: {available_providers}"
+        )
+
+    config.scraper_provider = provider
+    if "bright_data_api_key" in fields:
+        config.bright_data_api_key = fields["bright_data_api_key"] or None
+    if "bright_data_enrichment_enabled" in fields:
+        config.bright_data_enrichment_enabled = fields["bright_data_enrichment_enabled"]
+    if "scrape_creators_api_key" in fields:
+        config.scrape_creators_api_key = fields["scrape_creators_api_key"] or None
+
+    db.commit()
+    db.refresh(config)
+    return _settings_out(db, config)
 
 
 @router.patch("/settings/notifications", response_model=AppSettingsOut)
@@ -220,7 +268,7 @@ def update_notification_settings(payload: NotificationSettingsIn, db: Session = 
 
     db.commit()
     db.refresh(config)
-    return _settings_out(config)
+    return _settings_out(db, config)
 
 
 @router.post("/arena-run", response_model=ArenaRunOut)
@@ -256,7 +304,7 @@ def run_arena(payload: ArenaRunIn, db: Session = Depends(get_db)):
         try:
             scorer_fn = get_scorer(provider)
             api_key = get_api_key_for_provider(config, provider)
-            score_result = scorer_fn(listing, criteria_profile, model, api_key)
+            score_result, _usage = scorer_fn(listing, criteria_profile, model, api_key)
             results.append(
                 ArenaScoreResult(
                     provider=provider,
@@ -293,4 +341,159 @@ def run_arena(payload: ArenaRunIn, db: Session = Depends(get_db)):
         models=arena_run.models,
         results=results,
         created_at=arena_run.created_at.isoformat(),
+    )
+
+
+def _aggregate_llm_usage(query) -> list[LLMProviderUsageOut]:
+    """Older Score rows predate token tracking and have NULL input/output_tokens.
+    priced_count (COUNT skips NULLs) tracks how many of scored_count actually fed
+    the cost estimate, so the UI can say "priced N of M" instead of implying the
+    dollar figure covers every scored listing."""
+    rows = (
+        query.with_entities(
+            Score.model_used,
+            func.count(Score.id),
+            func.count(Score.input_tokens),
+            func.coalesce(func.sum(Score.input_tokens), 0),
+            func.coalesce(func.sum(Score.output_tokens), 0),
+        )
+        .group_by(Score.model_used)
+        .all()
+    )
+    results = []
+    for model_used, scored_count, priced_count, input_tokens, output_tokens in rows:
+        provider, _, model = model_used.partition("/")
+        results.append(
+            LLMProviderUsageOut(
+                provider=provider,
+                model=model,
+                scored_count=scored_count,
+                priced_count=priced_count,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                estimated_cost_usd=estimate_cost_usd(model_used, input_tokens, output_tokens) if priced_count else None,
+            )
+        )
+    return sorted(results, key=lambda r: (r.provider, r.model))
+
+
+@router.get("/usage", response_model=UsageOut)
+def get_usage(db: Session = Depends(get_db)):
+    config = get_app_settings(db)
+
+    apify_usage = []
+    for account in get_apify_accounts(db):
+        account_usage = ApifyAccountUsageOut(account_id=account.id, label=account.label)
+        try:
+            data = get_account_usage(account.api_token)
+            account_usage.used_usd = data["used_usd"]
+            account_usage.limit_usd = data["limit_usd"]
+            account_usage.cycle_start = data["cycle_start"]
+            account_usage.cycle_end = data["cycle_end"]
+        except Exception as e:
+            account_usage.error = str(e)
+        apify_usage.append(account_usage)
+
+    scrape_creators_usage = ScrapeCreatorsUsageOut(configured=bool(config.scrape_creators_api_key))
+    if config.scrape_creators_api_key:
+        try:
+            data = get_scrape_creators_usage(config.scrape_creators_api_key)
+            scrape_creators_usage.credits_remaining = data["credits_remaining"]
+            scrape_creators_usage.credits_used_today = data["credits_used_today"]
+            scrape_creators_usage.requests_today = data["requests_today"]
+        except Exception as e:
+            scrape_creators_usage.error = str(e)
+
+    bright_data_usage = BrightDataUsageOut(configured=bool(config.bright_data_api_key))
+    if config.bright_data_api_key:
+        try:
+            data = get_bright_data_usage(config.bright_data_api_key)
+            bright_data_usage.balance_usd = data["balance_usd"]
+            bright_data_usage.pending_balance_usd = data["pending_balance_usd"]
+        except Exception as e:
+            bright_data_usage.error = str(e)
+
+    month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    return UsageOut(
+        apify=apify_usage,
+        scrape_creators=scrape_creators_usage,
+        bright_data=bright_data_usage,
+        llm_this_month=_aggregate_llm_usage(db.query(Score).filter(Score.created_at >= month_start)),
+        llm_all_time=_aggregate_llm_usage(db.query(Score)),
+    )
+
+
+@router.get("/system-status", response_model=SystemStatusOut)
+def get_system_status(db: Session = Depends(get_db)):
+    config = get_app_settings(db)
+
+    llm_results = []
+    for provider in get_available_providers():
+        api_key = get_api_key_for_provider(config, provider)
+        if not api_key:
+            llm_results.append(LLMStatusOut(provider=provider, configured=False, status="not_configured"))
+            continue
+        try:
+            check_llm_connection(provider, api_key)
+            llm_results.append(LLMStatusOut(provider=provider, configured=True, status="connected"))
+        except Exception as e:
+            llm_results.append(LLMStatusOut(provider=provider, configured=True, status="error", error=str(e)))
+
+    scraper_results = []
+
+    apify_accounts = get_apify_accounts(db)
+    if not apify_accounts:
+        scraper_results.append(ScraperStatusOut(provider="apify", configured=False, status="not_configured"))
+    for account in apify_accounts:
+        try:
+            get_account_usage(account.api_token)
+            scraper_results.append(
+                ScraperStatusOut(provider="apify", configured=True, status="connected", label=account.label)
+            )
+        except Exception as e:
+            scraper_results.append(
+                ScraperStatusOut(provider="apify", configured=True, status="error", error=str(e), label=account.label)
+            )
+
+    other_scraper_checks = [
+        ("scrape_creators", config.scrape_creators_api_key, get_scrape_creators_usage),
+        ("bright_data", config.bright_data_api_key, get_bright_data_usage),
+    ]
+    for provider, api_key, check_fn in other_scraper_checks:
+        if not api_key:
+            scraper_results.append(ScraperStatusOut(provider=provider, configured=False, status="not_configured"))
+            continue
+        try:
+            check_fn(api_key)
+            scraper_results.append(ScraperStatusOut(provider=provider, configured=True, status="connected"))
+        except Exception as e:
+            scraper_results.append(ScraperStatusOut(provider=provider, configured=True, status="error", error=str(e)))
+
+    return SystemStatusOut(llm=llm_results, scrapers=scraper_results)
+
+
+@router.get("/logs", response_model=LogsOut)
+def get_logs(since_id: int = 0, limit: int = 500, db: Session = Depends(get_db)):
+    """Polled by the admin panel's live log viewer. since_id=0 returns the most
+    recent `limit` lines; a nonzero since_id returns everything newer than it,
+    so the client can advance from the server-reported last_id each poll."""
+    query = db.query(LogEntry)
+    if since_id:
+        rows = query.filter(LogEntry.id > since_id).order_by(LogEntry.id).limit(limit).all()
+    else:
+        rows = list(reversed(query.order_by(LogEntry.id.desc()).limit(limit).all()))
+
+    return LogsOut(
+        logs=[
+            LogEntryOut(
+                id=row.id,
+                created_at=row.created_at.isoformat(),
+                level=row.level,
+                logger_name=row.logger_name,
+                message=row.message,
+            )
+            for row in rows
+        ],
+        last_id=rows[-1].id if rows else since_id,
     )

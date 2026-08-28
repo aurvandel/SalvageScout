@@ -19,6 +19,20 @@ _DEFAULT_MODELS: dict[str, str] = {
     "gemini": gemini_scorer.DEFAULT_MODEL,
 }
 
+_SCORER_MODULES = {
+    "anthropic": anthropic_scorer,
+    "openai": openai_scorer,
+    "gemini": gemini_scorer,
+}
+
+
+def check_connection(provider: str, api_key: str) -> None:
+    try:
+        module = _SCORER_MODULES[provider]
+    except KeyError:
+        raise ValueError(f"Unknown LLM provider {provider!r}. Available: {sorted(_SCORER_MODULES)}") from None
+    module.check_connection(api_key)
+
 
 def get_scorer(provider: str) -> Scorer:
     try:

@@ -1,0 +1,153 @@
+"""Bright Data Facebook Marketplace item-detail scraper (Web Scraper API, not
+the paid Datasets marketplace — 5K free records/month, $1.5/1K after).
+
+Confirmed by direct calls against the live API — not docs, which turned out to
+describe input modes this dataset doesn't actually accept:
+- Single endpoint: POST /datasets/v3/scrape?dataset_id=gd_lvt9iwuh6fbcwmx1a,
+  body {"input": [{"url": ...}, ...], "limit_per_input": null}.
+- Item-detail ONLY. A keyword input is rejected outright (400: "This input
+  should not contain a keyword field"). A Marketplace search URL is rejected
+  too ("Not a product page", bad_input) — only a real listing item URL works.
+  So this scraper can't discover listings at all; it's a detail-enrichment
+  step layered on top of a real discovery backend (Apify/ScrapeCreators), not
+  a ScraperBackend in its own right.
+- The response is NEWLINE-DELIMITED JSON, one object per input line — not a
+  JSON array, despite what Bright Data's own docs examples show. Order isn't
+  guaranteed to match input order. Errors (bad url, or a transient issue like
+  "Redirect to login page" seen on a live call) come back as their own line
+  with an `error`/`error_code` rather than failing the whole request.
+"""
+
+import json
+from datetime import datetime
+from typing import Any
+
+import httpx
+
+BASE_URL = "https://api.brightdata.com/datasets/v3/scrape"
+DATASET_ID = "gd_lvt9iwuh6fbcwmx1a"
+BALANCE_URL = "https://api.brightdata.com/customer/balance"
+
+
+def _headers(api_key: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+
+
+def get_account_usage(api_key: str) -> dict[str, Any]:
+    """Current account balance and the pending charge for the next billing
+    cycle. Raises with the response body attached (not just the status line)
+    since a permissions-scoped API key — confirmed live: a token missing the
+    right scope gets a 403 whose body names the fix ("change your token
+    permissions at brightdata.com/cp/setting/users") — would otherwise surface
+    to the caller as an opaque "403 Forbidden" with no way to act on it."""
+    response = httpx.get(BALANCE_URL, headers=_headers(api_key), timeout=10.0)
+    if response.status_code >= 400:
+        raise RuntimeError(f"Bright Data balance API returned {response.status_code}: {response.text.strip()[:200]}")
+    data = response.json()
+    return {"balance_usd": data["balance"], "pending_balance_usd": data["pending_costs"]}
+
+
+def _parse_timestamp(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def _normalize(raw: dict[str, Any]) -> dict[str, Any]:
+    final_price = raw.get("final_price")
+    initial_price = raw.get("initial_price")
+
+    # Deliberately omits raw_scraper_data: that column documents which provider
+    # discovered the listing, and this is an enrichment step layered on top of
+    # discovery, not a replacement for it — overwriting it here would lose the
+    # primary source's raw payload for every enriched listing.
+    #
+    # Also deliberately omits is_sold: the discovery provider (Apify/
+    # ScrapeCreators) already owns that field and defaults it to False when
+    # absent, not None — so mapping it here would just get silently clobbered
+    # back to False on the next run's re-scrape, flip-flopping a real "sold"
+    # observation back to "active" instead of sticking.
+    return {
+        "title": raw.get("title"),
+        "description": raw.get("description") or raw.get("seller_description"),
+        "price_amount": final_price if final_price is not None else initial_price,
+        "currency": raw.get("currency"),
+        "strikethrough_price_amount": initial_price if initial_price != final_price else None,
+        "condition": raw.get("condition"),
+        "location_text": raw.get("location"),
+        "mileage": raw.get("car_miles"),
+        "posted_at": _parse_timestamp(raw.get("listing_date")),
+        "photo_urls": raw.get("images") or [],
+    }
+
+
+CHUNK_SIZE = 10
+
+
+def _fetch_details_chunk(api_key: str, urls: list[str]) -> dict[str, dict[str, Any]]:
+    response = httpx.post(
+        BASE_URL,
+        headers=_headers(api_key),
+        params={"dataset_id": DATASET_ID, "include_errors": "true"},
+        json={"input": [{"url": url} for url in urls], "limit_per_input": None},
+        timeout=90.0,
+    )
+    response.raise_for_status()
+
+    results: dict[str, dict[str, Any]] = {}
+    for line in response.text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        raw = json.loads(line)
+        if raw.get("error"):
+            continue
+        url = raw.get("url") or (raw.get("input") or {}).get("url")
+        if url:
+            results[url] = _normalize(raw)
+    return results
+
+
+def fetch_details(api_key: str, urls: list[str]) -> dict[str, dict[str, Any]]:
+    """Fetch detail for each url, chunked into batches of CHUNK_SIZE. Returns
+    {url: normalized fields} only for urls that succeeded — a url that errors
+    (bad input, or a transient fetch failure) is simply absent, left for the
+    caller to fall back to whatever the primary scraper backend already
+    returned for it. Chunking bounds the blast radius of a single timeout on
+    a large filter — losing 10 already-billed records to a slow batch is far
+    cheaper than losing all of them in one oversized request."""
+    if not urls:
+        return {}
+
+    results: dict[str, dict[str, Any]] = {}
+    for i in range(0, len(urls), CHUNK_SIZE):
+        results.update(_fetch_details_chunk(api_key, urls[i : i + CHUNK_SIZE]))
+    return results
+
+
+def enrich_listings(items: list[dict[str, Any]], api_key: str) -> list[dict[str, Any]]:
+    """Layer Bright Data's item detail onto already-normalized listings from
+    the primary scraper backend, one batched call for the whole set. Only
+    overwrites fields Bright Data actually returned a value for, so a listing
+    it couldn't fetch (or returned a sparser record for) keeps the primary
+    source's data instead of getting nulled out."""
+    urls = [item["url"] for item in items if item.get("url")]
+    details = fetch_details(api_key, urls)
+
+    enriched = []
+    for item in items:
+        detail = details.get(item.get("url"))
+        if detail is None:
+            enriched.append(item)
+            continue
+        merged = dict(item)
+        for key, value in detail.items():
+            # Identity fields belong to the discovery provider, never to the
+            # enrichment step, even though _normalize doesn't currently emit
+            # them — guard explicitly so that stays true if it ever does.
+            if key in ("fb_listing_id", "url"):
+                continue
+            if value is not None:
+                merged[key] = value
+        enriched.append(merged)
+    return enriched

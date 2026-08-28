@@ -58,6 +58,16 @@
   border: 1px solid var(--glass-border-soft);
 }
 
+.settings-form + .settings-form {
+  margin-top: 16px;
+}
+
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--glass-border);
+  margin: 24px 0;
+}
+
 .config-item {
   margin-bottom: 20px;
 }
@@ -581,4 +591,222 @@
   display: flex;
   gap: 10px;
   align-items: center;
+}
+
+.usage-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 1.1rem;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.usage-summary-sep {
+  color: var(--muted);
+}
+
+.usage-bar {
+  width: 100%;
+  max-width: 420px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border-soft);
+  overflow: hidden;
+}
+
+.usage-bar-fill {
+  height: 100%;
+  background: var(--high);
+  transition: width 0.2s ease;
+}
+
+.usage-bar-fill-mid {
+  background: var(--mid);
+}
+
+.usage-bar-fill-high {
+  background: var(--low);
+}
+
+.usage-subheading {
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 20px 0 10px;
+}
+
+.usage-subheading:first-of-type {
+  margin-top: 0;
+}
+
+.status-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.status-section-header h2 {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.status-section-header .save-button,
+.status-section-header .cancel-button {
+  margin-top: 0;
+}
+
+.status-badge {
+  padding: 3px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.status-badge-connected {
+  background: rgba(var(--high-rgb), 0.14);
+  color: var(--high);
+}
+
+.status-badge-error {
+  background: rgba(var(--low-rgb), 0.14);
+  color: var(--low-text);
+}
+
+.status-badge-not-configured {
+  background: var(--glass-bg-strong);
+  color: var(--muted);
+}
+
+.log-viewer {
+  height: 420px;
+  overflow-y: auto;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border-soft);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.log-line {
+  display: flex;
+  gap: 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+  border-bottom: 1px solid var(--glass-border-soft);
+  padding: 3px 0;
+}
+
+.log-line:last-child {
+  border-bottom: none;
+}
+
+.log-timestamp {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.log-logger {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.log-level-warning .log-message,
+.log-level-warning .log-logger {
+  color: var(--mid);
+}
+
+.log-level-error .log-message,
+.log-level-error .log-logger,
+.log-level-critical .log-message,
+.log-level-critical .log-logger {
+  color: var(--low-text);
+}
+
+@media (max-width: 640px) {
+  .admin-panel {
+    padding: 16px 12px 48px;
+  }
+
+  .admin-panel h1 {
+    font-size: 1.6rem;
+    margin-bottom: 16px;
+  }
+
+  .admin-section {
+    padding: 16px;
+  }
+
+  .tab-bar {
+    flex-wrap: wrap;
+  }
+
+  .tab-button {
+    flex: 0 0 auto;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+  }
+
+  .results-grid,
+  .arena-comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-row,
+  .profile-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-row-actions,
+  .profile-row-actions {
+    justify-content: flex-end;
+  }
+
+  .settings-form .config-item select,
+  .settings-form .config-item input[type="text"],
+  .settings-form .config-item input[type="password"],
+  .settings-form .config-item input[type="number"] {
+    max-width: 100%;
+  }
+
+  .time-input {
+    margin-right: 12px;
+  }
+
+  .time-input input,
+  .arena-provider-row select {
+    font-size: 16px;
+  }
+
+  .edit-button,
+  .delete-button,
+  .activate-button {
+    padding: 8px 14px;
+  }
+
+  .status-section-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .log-viewer {
+    height: 320px;
+    font-size: 0.75rem;
+  }
+
+  .log-line {
+    flex-direction: column;
+    gap: 2px;
+  }
 }

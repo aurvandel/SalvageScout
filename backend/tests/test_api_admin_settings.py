@@ -5,8 +5,10 @@ def test_get_settings_returns_all_groups(client):
     body = response.json()
     assert "llm" in body
     assert "apify" in body
+    assert "scraper" in body
     assert "notifications" in body
     assert body["llm"]["provider"] in body["llm"]["available_providers"]
+    assert body["scraper"]["provider"] in body["scraper"]["available_providers"]
 
 
 def test_patch_llm_settings_updates_provider_and_model(client):
@@ -47,14 +49,66 @@ def test_patch_llm_settings_leaves_unspecified_fields_unchanged(client):
 
 
 def test_patch_apify_settings(client):
-    response = client.patch(
-        "/api/admin/settings/apify", json={"apify_token": "fake-token-1234", "actor_id": "custom/actor"}
-    )
+    response = client.patch("/api/admin/settings/apify", json={"actor_id": "custom/actor"})
 
     assert response.status_code == 200
     body = response.json()["apify"]
     assert body["actor_id"] == "custom/actor"
-    assert "1234" in body["apify_token_masked"]
+
+
+def test_patch_scraper_settings_switches_provider(client):
+    response = client.patch(
+        "/api/admin/settings/scraper",
+        json={"provider": "scrape_creators", "scrape_creators_api_key": "sc-fake-1234"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()["scraper"]
+    assert body["provider"] == "scrape_creators"
+    assert "1234" in body["scrape_creators_api_key_masked"]
+
+
+def test_patch_scraper_settings_rejects_unknown_provider(client):
+    response = client.patch("/api/admin/settings/scraper", json={"provider": "not-a-real-provider"})
+    assert response.status_code == 400
+
+
+def test_patch_scraper_settings_flags_incompatible_url_mode_filters(client):
+    client.post(
+        "/api/search-filters",
+        json={"name": "raw url filter", "search_mode": "url", "search_url": "https://example.com/search"},
+    )
+
+    response = client.patch("/api/admin/settings/scraper", json={"provider": "scrape_creators"})
+
+    assert response.status_code == 200
+    assert "raw url filter" in response.json()["scraper"]["incompatible_filter_names"]
+
+
+def test_patch_scraper_settings_toggles_bright_data_enrichment(client):
+    response = client.patch(
+        "/api/admin/settings/scraper",
+        json={"bright_data_api_key": "bd-fake-5678", "bright_data_enrichment_enabled": True},
+    )
+
+    assert response.status_code == 200
+    body = response.json()["scraper"]
+    assert body["bright_data_enrichment_enabled"] is True
+    assert "5678" in body["bright_data_api_key_masked"]
+
+    # Explicitly turning it back off must actually persist False, not be
+    # treated as "unset" and left unchanged.
+    response = client.patch("/api/admin/settings/scraper", json={"bright_data_enrichment_enabled": False})
+    assert response.json()["scraper"]["bright_data_enrichment_enabled"] is False
+
+
+def test_patch_scraper_settings_rejects_bright_data_as_a_provider(client):
+    # Bright Data can't discover listings (item-detail only) so it isn't a
+    # selectable scraper_provider, only an enrichment toggle.
+    response = client.patch("/api/admin/settings/scraper", json={"provider": "bright_data"})
+    assert response.status_code == 400
+
+
 
 
 def test_patch_notification_settings_toggles_channels(client):

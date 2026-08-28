@@ -8,8 +8,12 @@ vi.mock("./admin/LLMTab", () => ({
   default: () => <div data-testid="llm-tab">LLM Tab</div>,
 }))
 
-vi.mock("./admin/ApifyTab", () => ({
-  default: () => <div data-testid="apify-tab">Apify Tab</div>,
+vi.mock("./admin/ScraperTab", () => ({
+  default: () => <div data-testid="scraper-tab">Scraper Tab</div>,
+}))
+
+vi.mock("./admin/ApifyAccountsTab", () => ({
+  default: () => <div data-testid="apify-accounts-tab">Apify Accounts Tab</div>,
 }))
 
 vi.mock("./admin/NotificationsTab", () => ({
@@ -28,6 +32,10 @@ vi.mock("./admin/ArenaTab", () => ({
   default: () => <div data-testid="arena-tab">Arena Tab</div>,
 }))
 
+vi.mock("./admin/StatusTab", () => ({
+  default: () => <div data-testid="status-tab">Status Tab</div>,
+}))
+
 describe("AdminPanel", () => {
   it("renders the admin panel title", () => {
     render(<AdminPanel />)
@@ -37,7 +45,7 @@ describe("AdminPanel", () => {
   it("renders all six tab buttons", () => {
     render(<AdminPanel />)
     expect(screen.getByRole("button", { name: "LLM" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Apify" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Scraper" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Notifications" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Search Filters" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Schedule" })).toBeInTheDocument()
@@ -51,7 +59,7 @@ describe("AdminPanel", () => {
 
   it("hides other tabs when LLM tab is active", () => {
     render(<AdminPanel />)
-    expect(screen.queryByTestId("apify-tab")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("scraper-tab")).not.toBeInTheDocument()
     expect(screen.queryByTestId("notifications-tab")).not.toBeInTheDocument()
     expect(screen.queryByTestId("search-tab")).not.toBeInTheDocument()
     expect(screen.queryByTestId("schedule-tab")).not.toBeInTheDocument()
@@ -64,21 +72,21 @@ describe("AdminPanel", () => {
     expect(llmButton).toHaveClass("active")
   })
 
-  it("switches to Apify tab when clicked", async () => {
+  it("switches to Scraper tab when clicked", async () => {
     const user = userEvent.setup()
     render(<AdminPanel />)
-    const apifyButton = screen.getByRole("button", { name: "Apify" })
-    await user.click(apifyButton)
-    expect(screen.getByTestId("apify-tab")).toBeInTheDocument()
+    const scraperButton = screen.getByRole("button", { name: "Scraper" })
+    await user.click(scraperButton)
+    expect(screen.getByTestId("scraper-tab")).toBeInTheDocument()
     expect(screen.queryByTestId("llm-tab")).not.toBeInTheDocument()
   })
 
-  it("marks Apify tab button as active after clicking it", async () => {
+  it("marks Scraper tab button as active after clicking it", async () => {
     const user = userEvent.setup()
     render(<AdminPanel />)
-    const apifyButton = screen.getByRole("button", { name: "Apify" })
-    await user.click(apifyButton)
-    expect(apifyButton).toHaveClass("active")
+    const scraperButton = screen.getByRole("button", { name: "Scraper" })
+    await user.click(scraperButton)
+    expect(scraperButton).toHaveClass("active")
     expect(screen.getByRole("button", { name: "LLM" })).not.toHaveClass("active")
   })
 
@@ -118,16 +126,34 @@ describe("AdminPanel", () => {
     expect(screen.queryByTestId("llm-tab")).not.toBeInTheDocument()
   })
 
+  it("switches to Status tab when clicked", async () => {
+    const user = userEvent.setup()
+    render(<AdminPanel />)
+    const statusButton = screen.getByRole("button", { name: "Status" })
+    await user.click(statusButton)
+    expect(screen.getByTestId("status-tab")).toBeInTheDocument()
+    expect(screen.queryByTestId("llm-tab")).not.toBeInTheDocument()
+  })
+
+  it("switches to Apify Accounts tab when clicked", async () => {
+    const user = userEvent.setup()
+    render(<AdminPanel />)
+    const apifyAccountsButton = screen.getByRole("button", { name: "Apify Accounts" })
+    await user.click(apifyAccountsButton)
+    expect(screen.getByTestId("apify-accounts-tab")).toBeInTheDocument()
+    expect(screen.queryByTestId("llm-tab")).not.toBeInTheDocument()
+  })
+
   it("allows switching between multiple tabs", async () => {
     const user = userEvent.setup()
     render(<AdminPanel />)
     expect(screen.getByTestId("llm-tab")).toBeInTheDocument()
-    await user.click(screen.getByRole("button", { name: "Apify" }))
-    expect(screen.getByTestId("apify-tab")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Scraper" }))
+    expect(screen.getByTestId("scraper-tab")).toBeInTheDocument()
     expect(screen.queryByTestId("llm-tab")).not.toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: "Schedule" }))
     expect(screen.getByTestId("schedule-tab")).toBeInTheDocument()
-    expect(screen.queryByTestId("apify-tab")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("scraper-tab")).not.toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: "LLM" }))
     expect(screen.getByTestId("llm-tab")).toBeInTheDocument()
     expect(screen.queryByTestId("schedule-tab")).not.toBeInTheDocument()
@@ -137,17 +163,17 @@ describe("AdminPanel", () => {
     const user = userEvent.setup()
     render(<AdminPanel />)
     const llmButton = screen.getByRole("button", { name: "LLM" })
-    const apifyButton = screen.getByRole("button", { name: "Apify" })
+    const scraperButton = screen.getByRole("button", { name: "Scraper" })
     const scheduleButton = screen.getByRole("button", { name: "Schedule" })
     expect(llmButton).toHaveClass("active")
-    expect(apifyButton).not.toHaveClass("active")
-    await user.click(apifyButton)
+    expect(scraperButton).not.toHaveClass("active")
+    await user.click(scraperButton)
     expect(llmButton).not.toHaveClass("active")
-    expect(apifyButton).toHaveClass("active")
+    expect(scraperButton).toHaveClass("active")
     expect(scheduleButton).not.toHaveClass("active")
     await user.click(scheduleButton)
     expect(llmButton).not.toHaveClass("active")
-    expect(apifyButton).not.toHaveClass("active")
+    expect(scraperButton).not.toHaveClass("active")
     expect(scheduleButton).toHaveClass("active")
   })
 })

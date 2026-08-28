@@ -10,6 +10,10 @@ import type {
   SearchFilterOut,
   CriteriaProfileIn,
   CriteriaProfileOut,
+  UsageOut,
+  SystemStatusOut,
+  LogsOut,
+  ApifyAccountOut,
 } from './types'
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -103,10 +107,57 @@ export function updateLLMSettings(fields: {
 }
 
 export function updateApifySettings(fields: {
-  apify_token?: string
   actor_id?: string
 }): Promise<AppSettingsOut> {
   return request<AppSettingsOut>('/api/admin/settings/apify', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fields),
+  })
+}
+
+export function fetchApifyAccounts(): Promise<ApifyAccountOut[]> {
+  return request<ApifyAccountOut[]>('/api/apify-accounts')
+}
+
+export function createApifyAccount(payload: {
+  label: string
+  api_token: string
+  priority?: number
+  is_active?: boolean
+}): Promise<ApifyAccountOut> {
+  return request<ApifyAccountOut>('/api/apify-accounts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateApifyAccount(
+  id: number,
+  payload: { label?: string; api_token?: string; priority?: number; is_active?: boolean }
+): Promise<ApifyAccountOut> {
+  return request<ApifyAccountOut>(`/api/apify-accounts/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteApifyAccount(id: number): Promise<void> {
+  const response = await fetch(`/api/apify-accounts/${id}`, { method: 'DELETE' })
+  if (!response.ok) {
+    throw new Error(`/api/apify-accounts/${id} failed: ${response.status}`)
+  }
+}
+
+export function updateScraperSettings(fields: {
+  provider?: string
+  bright_data_api_key?: string
+  bright_data_enrichment_enabled?: boolean
+  scrape_creators_api_key?: string
+}): Promise<AppSettingsOut> {
+  return request<AppSettingsOut>('/api/admin/settings/scraper', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(fields),
@@ -172,6 +223,18 @@ export function activateCriteriaProfile(profileId: number): Promise<CriteriaProf
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   })
+}
+
+export function fetchUsage(): Promise<UsageOut> {
+  return request<UsageOut>('/api/admin/usage')
+}
+
+export function fetchSystemStatus(): Promise<SystemStatusOut> {
+  return request<SystemStatusOut>('/api/admin/system-status')
+}
+
+export function fetchLogs(sinceId = 0): Promise<LogsOut> {
+  return request<LogsOut>(`/api/admin/logs?since_id=${sinceId}`)
 }
 
 export async function runArenaTest(params: {

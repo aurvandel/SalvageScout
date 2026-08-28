@@ -7,7 +7,7 @@ def _make_listing(db, fb_listing_id, **overrides):
         url=f"https://example.com/{fb_listing_id}",
         title="2014 Chevrolet Impala",
         price_amount=2500.0,
-        raw_apify_data={},
+        raw_scraper_data={},
     )
     defaults.update(overrides)
     listing = Listing(**defaults)
@@ -197,6 +197,7 @@ def test_delete_listing_survives_reingest(db, client, raw_listing):
     the same fb_listing_id on a later scrape."""
     from app.models import SearchFilter
     from app.scraper.ingest import ingest_listings
+    from app.scraper.normalize import normalize_listing
 
     search_filter = SearchFilter(name="test", search_url="https://example.com")
     db.add(search_filter)
@@ -206,7 +207,7 @@ def test_delete_listing_survives_reingest(db, client, raw_listing):
     listing = _make_listing(db, raw_listing["id"])
     client.delete(f"/api/listings/{listing.id}")
 
-    ingest_listings(db, search_filter, [raw_listing])
+    ingest_listings(db, search_filter, [normalize_listing(raw_listing)])
 
     refreshed = db.get(type(listing), listing.id)
     assert refreshed.is_deleted is True

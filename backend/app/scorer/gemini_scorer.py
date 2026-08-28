@@ -4,7 +4,7 @@ import google.generativeai as genai
 
 from app.models import CriteriaProfile, Listing
 from app.scorer.base import build_listing_text
-from app.scorer.schemas import ScoreResult
+from app.scorer.schemas import ScoreResult, TokenUsage
 
 AVAILABLE_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
 DEFAULT_MODEL = "gemini-2.0-flash"
@@ -12,7 +12,7 @@ DEFAULT_MODEL = "gemini-2.0-flash"
 
 def score_listing(
     listing: Listing, criteria_profile: CriteriaProfile, model: str = DEFAULT_MODEL, api_key: str | None = None
-) -> ScoreResult:
+) -> tuple[ScoreResult, TokenUsage]:
     if model not in AVAILABLE_MODELS:
         raise ValueError(f"Unknown Gemini model: {model}. Available: {AVAILABLE_MODELS}")
     if not api_key:
@@ -46,4 +46,16 @@ def score_listing(
     )
 
     result_dict = json.loads(response.text)
-    return ScoreResult(**result_dict)
+    usage = TokenUsage(
+        input_tokens=response.usage_metadata.prompt_token_count,
+        output_tokens=response.usage_metadata.candidates_token_count,
+    )
+    return ScoreResult(**result_dict), usage
+
+
+def check_connection(api_key: str) -> None:
+    """Raises if the key is invalid or Gemini is unreachable. Lists models
+    instead of scoring — costs no tokens. list_models() is lazy, so next()
+    is what actually forces the HTTP call."""
+    genai.configure(api_key=api_key)
+    next(iter(genai.list_models(request_options={"timeout": 5})))

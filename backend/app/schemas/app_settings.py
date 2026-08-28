@@ -29,12 +29,32 @@ class LLMSettingsIn(BaseModel):
 
 class ApifySettingsOut(BaseModel):
     actor_id: str
-    apify_token_masked: str | None
 
 
 class ApifySettingsIn(BaseModel):
     actor_id: str | None = None
-    apify_token: str | None = None
+
+
+class ScraperSettingsOut(BaseModel):
+    provider: str
+    available_providers: list[str]
+    # Bright Data isn't a `provider` choice — its scraper is item-detail only
+    # (confirmed live) and can't discover listings. It's an optional enrichment
+    # step layered on top of whichever provider does discovery.
+    bright_data_api_key_masked: str | None
+    bright_data_enrichment_enabled: bool
+    scrape_creators_api_key_masked: str | None
+    # Active search filters that can't be scraped by `provider` (search_mode="url"
+    # filters, which only Apify's backend can consume) — surfaced here so a
+    # provider switch doesn't silently stop producing listings for them.
+    incompatible_filter_names: list[str]
+
+
+class ScraperSettingsIn(BaseModel):
+    provider: str | None = None
+    bright_data_api_key: str | None = None
+    bright_data_enrichment_enabled: bool | None = None
+    scrape_creators_api_key: str | None = None
 
 
 class NotificationSettingsOut(BaseModel):
@@ -58,4 +78,5 @@ class NotificationSettingsIn(BaseModel):
 class AppSettingsOut(BaseModel):
     llm: LLMSettingsOut
     apify: ApifySettingsOut
+    scraper: ScraperSettingsOut
     notifications: NotificationSettingsOut

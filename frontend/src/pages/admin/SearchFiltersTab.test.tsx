@@ -23,6 +23,11 @@ const mockSearchFilters = [
     condition: null,
     results_limit: 100,
     criteria_profile_id: null,
+    sort_by: null,
+    delivery_method: null,
+    availability: null,
+    latitude: null,
+    longitude: null,
   },
   {
     id: 2,
@@ -39,13 +44,28 @@ const mockSearchFilters = [
     condition: 'used',
     results_limit: 150,
     criteria_profile_id: null,
+    sort_by: null,
+    delivery_method: null,
+    availability: null,
+    latitude: null,
+    longitude: null,
   },
 ]
+
+function mockSettings(provider: string) {
+  vi.mocked(client.fetchSettings).mockResolvedValue({
+    llm: {} as never,
+    apify: {} as never,
+    scraper: { provider, available_providers: ['apify', 'scrape_creators'], bright_data_api_key_masked: null, bright_data_enrichment_enabled: false, scrape_creators_api_key_masked: null, incompatible_filter_names: [] },
+    notifications: {} as never,
+  })
+}
 
 describe('SearchFiltersTab', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(client.fetchCriteriaProfiles).mockResolvedValue([])
+    mockSettings('apify')
     vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
@@ -120,6 +140,11 @@ describe('SearchFiltersTab', () => {
       condition: null,
       results_limit: 100,
       criteria_profile_id: null,
+      sort_by: null,
+      delivery_method: null,
+      availability: null,
+      latitude: null,
+      longitude: null,
     }
 
     vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce(mockSearchFilters)
@@ -159,6 +184,11 @@ describe('SearchFiltersTab', () => {
         condition: null,
         results_limit: 100,
         criteria_profile_id: null,
+        sort_by: null,
+        delivery_method: null,
+        availability: null,
+        latitude: null,
+        longitude: null,
       })
     })
   })
@@ -179,6 +209,11 @@ describe('SearchFiltersTab', () => {
       condition: 'used',
       results_limit: 100,
       criteria_profile_id: null,
+      sort_by: null,
+      delivery_method: null,
+      availability: null,
+      latitude: null,
+      longitude: null,
     }
 
     vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce(mockSearchFilters)
@@ -240,6 +275,11 @@ describe('SearchFiltersTab', () => {
         condition: 'used',
         results_limit: 100,
         criteria_profile_id: null,
+        sort_by: null,
+        delivery_method: null,
+        availability: null,
+        latitude: null,
+        longitude: null,
       })
     })
   })
@@ -287,6 +327,226 @@ describe('SearchFiltersTab', () => {
       expect(screen.getByLabelText('Search Query')).toBeInTheDocument()
       expect(screen.getByLabelText('Min Price')).toBeInTheDocument()
       expect(screen.getByLabelText('Condition')).toBeInTheDocument()
+    })
+  })
+
+  it('shows ScrapeCreators-only fields as enum selects when that provider is active', async () => {
+    mockSettings('scrape_creators')
+    vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce([])
+
+    render(<SearchFiltersTab />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Name')).toBeInTheDocument()
+    })
+
+    const modeSelect = screen.getByLabelText('Search Mode') as HTMLSelectElement
+    await userEvent.selectOptions(modeSelect, 'location')
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Location (city, state)')).toBeInTheDocument()
+      expect(screen.getByLabelText('Sort By')).toBeInTheDocument()
+      expect(screen.getByLabelText('Delivery Method')).toBeInTheDocument()
+      expect(screen.getByLabelText('Availability')).toBeInTheDocument()
+    })
+
+    expect((screen.getByLabelText('Condition') as HTMLSelectElement).tagName).toBe('SELECT')
+    expect((screen.getByLabelText('Date Listed') as HTMLSelectElement).tagName).toBe('SELECT')
+  })
+
+  it('blanks an out-of-enum condition when editing an Apify-era filter under ScrapeCreators', async () => {
+    // mockSearchFilters[1] carries condition='used' (the Apify-era admin UI
+    // placeholder), which matches no ScrapeCreators <option>. With the old
+    // startEdit the select would silently display "Any condition" while form
+    // state (and thus the eventual save) still held 'used'. days_listed=30 is
+    // a valid ScrapeCreators bucket, so it should survive unchanged —
+    // asserting that guards against over-blanking valid values too.
+    mockSettings('scrape_creators')
+    vi.mocked(client.fetchSearchFilters)
+      .mockResolvedValueOnce(mockSearchFilters)
+      .mockResolvedValueOnce(mockSearchFilters)
+    vi.mocked(client.updateSearchFilter).mockResolvedValueOnce(mockSearchFilters[1])
+
+    render(<SearchFiltersTab />)
+
+    await waitFor(() => {
+      expect(screen.getByText('CA Location Search')).toBeInTheDocument()
+    })
+
+    const editButtons = screen.getAllByRole('button', { name: /Edit/ })
+    await userEvent.click(editButtons[1])
+
+    const conditionSelect = await screen.findByLabelText('Condition') as HTMLSelectElement
+    expect(conditionSelect.value).toBe('')
+    const dateSelect = screen.getByLabelText('Date Listed') as HTMLSelectElement
+    expect(dateSelect.value).toBe('30')
+
+    const updateButton = screen.getByRole('button', { name: /Update Filter/ })
+    await userEvent.click(updateButton)
+
+    await waitFor(() => {
+      const payload = vi.mocked(client.updateSearchFilter).mock.calls[0][1]
+      expect(payload.condition).toBeNull()
+      expect(payload.days_listed).toBe(30)
+    })
+  })
+
+  it('hides ScrapeCreators-only fields and uses free-form condition/days for Apify', async () => {
+    mockSettings('apify')
+    vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce([])
+
+    render(<SearchFiltersTab />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Name')).toBeInTheDocument()
+    })
+
+    const modeSelect = screen.getByLabelText('Search Mode') as HTMLSelectElement
+    await userEvent.selectOptions(modeSelect, 'location')
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Location (Facebook city slug)')).toBeInTheDocument()
+    })
+
+    expect(screen.queryByLabelText('Sort By')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Delivery Method')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Availability')).not.toBeInTheDocument()
+    expect((screen.getByLabelText('Condition') as HTMLInputElement).tagName).toBe('INPUT')
+    expect((screen.getByLabelText('Days Listed') as HTMLInputElement).tagName).toBe('INPUT')
+    expect(screen.queryByLabelText('Latitude')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Longitude')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Use My Location/ })).not.toBeInTheDocument()
+  })
+
+  it('fills latitude/longitude from geolocation when "Use My Location" is clicked', async () => {
+    const getCurrentPosition = vi.fn((success: PositionCallback) => {
+      success({ coords: { latitude: 30.267153, longitude: -97.743057 } } as GeolocationPosition)
+    })
+    vi.stubGlobal('navigator', { ...navigator, geolocation: { getCurrentPosition } })
+
+    mockSettings('scrape_creators')
+    vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce([])
+
+    render(<SearchFiltersTab />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Name')).toBeInTheDocument()
+    })
+
+    const modeSelect = screen.getByLabelText('Search Mode') as HTMLSelectElement
+    await userEvent.selectOptions(modeSelect, 'location')
+
+    const useLocationButton = await screen.findByRole('button', { name: /Use My Location/ })
+    await userEvent.click(useLocationButton)
+
+    await waitFor(() => {
+      expect((screen.getByLabelText('Latitude') as HTMLInputElement).value).toBe('30.267153')
+      expect((screen.getByLabelText('Longitude') as HTMLInputElement).value).toBe('-97.743057')
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('shows an error when geolocation is denied', async () => {
+    const getCurrentPosition = vi.fn((_success: PositionCallback, error: PositionErrorCallback) => {
+      error({ code: 1, message: 'User denied Geolocation' } as GeolocationPositionError)
+    })
+    vi.stubGlobal('navigator', { ...navigator, geolocation: { getCurrentPosition } })
+
+    mockSettings('scrape_creators')
+    vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce([])
+
+    render(<SearchFiltersTab />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Name')).toBeInTheDocument()
+    })
+
+    const modeSelect = screen.getByLabelText('Search Mode') as HTMLSelectElement
+    await userEvent.selectOptions(modeSelect, 'location')
+
+    const useLocationButton = await screen.findByRole('button', { name: /Use My Location/ })
+    await userEvent.click(useLocationButton)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Couldn't get your location: User denied Geolocation/)).toBeInTheDocument()
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('shows an error when the browser has no geolocation support', async () => {
+    vi.stubGlobal('navigator', { ...navigator, geolocation: undefined })
+
+    mockSettings('scrape_creators')
+    vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce([])
+
+    render(<SearchFiltersTab />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Name')).toBeInTheDocument()
+    })
+
+    const modeSelect = screen.getByLabelText('Search Mode') as HTMLSelectElement
+    await userEvent.selectOptions(modeSelect, 'location')
+
+    const useLocationButton = await screen.findByRole('button', { name: /Use My Location/ })
+    await userEvent.click(useLocationButton)
+
+    await waitFor(() => {
+      expect(screen.getByText(/doesn't support geolocation/)).toBeInTheDocument()
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('sends latitude/longitude in the create payload for ScrapeCreators', async () => {
+    const createdFilter = {
+      id: 5,
+      name: 'Near Me',
+      is_active: true,
+      search_mode: 'location' as const,
+      search_url: null,
+      location: null,
+      query: null,
+      min_price: null,
+      max_price: null,
+      radius_miles: null,
+      days_listed: null,
+      condition: null,
+      results_limit: 100,
+      criteria_profile_id: null,
+      sort_by: null,
+      delivery_method: null,
+      availability: null,
+      latitude: 30.267153,
+      longitude: -97.743057,
+    }
+    mockSettings('scrape_creators')
+    vi.mocked(client.fetchSearchFilters)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([createdFilter])
+    vi.mocked(client.createSearchFilter).mockResolvedValueOnce(createdFilter)
+
+    render(<SearchFiltersTab />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Name')).toBeInTheDocument()
+    })
+
+    await userEvent.type(screen.getByLabelText('Name'), 'Near Me')
+    await userEvent.selectOptions(screen.getByLabelText('Search Mode'), 'location')
+
+    const latInput = await screen.findByLabelText('Latitude')
+    await userEvent.type(latInput, '30.267153')
+    await userEvent.type(screen.getByLabelText('Longitude'), '-97.743057')
+
+    await userEvent.click(screen.getByRole('button', { name: /Add Filter/ }))
+
+    await waitFor(() => {
+      const payload = vi.mocked(client.createSearchFilter).mock.calls[0][0]
+      expect(payload.latitude).toBe(30.267153)
+      expect(payload.longitude).toBe(-97.743057)
     })
   })
 
@@ -434,6 +694,11 @@ describe('SearchFiltersTab', () => {
       condition: null,
       results_limit: 100,
       criteria_profile_id: null,
+      sort_by: null,
+      delivery_method: null,
+      availability: null,
+      latitude: null,
+      longitude: null,
     }
 
     vi.mocked(client.fetchSearchFilters).mockResolvedValueOnce(mockSearchFilters)

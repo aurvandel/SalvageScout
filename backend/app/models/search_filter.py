@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -37,3 +37,16 @@ class SearchFilter(Base):
     days_listed: Mapped[int | None] = mapped_column(Integer, nullable=True)
     condition: Mapped[str | None] = mapped_column(String, nullable=True)
     results_limit: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
+
+    # ScrapeCreators-only refinements — its marketplace search endpoint accepts
+    # these fixed enums, but Apify's URL-based search has no equivalent, so
+    # they're simply left unset when that provider is active.
+    sort_by: Mapped[str | None] = mapped_column(String, nullable=True)
+    delivery_method: Mapped[str | None] = mapped_column(String, nullable=True)
+    availability: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    # Geocode cache for scraper backends (e.g. ScrapeCreators) whose discovery
+    # endpoint needs lat/lng rather than a location string — resolved once from
+    # `location` and reused across runs instead of spending an API call every time.
+    latitude: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)

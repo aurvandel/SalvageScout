@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.models import CriteriaProfile, Listing
-from app.scorer.anthropic_scorer import DEFAULT_MODEL, score_listing
+from app.scorer.anthropic_scorer import DEFAULT_MODEL, check_connection, score_listing
 from app.scorer.schemas import ScoreResult
 
 
@@ -13,7 +13,7 @@ def _listing():
         url="https://example.com",
         title="2014 Chevrolet Impala",
         price_amount=2500.0,
-        raw_apify_data={},
+        raw_scraper_data={},
     )
 
 
@@ -24,12 +24,16 @@ def _criteria_profile():
 def test_score_listing_calls_parse_with_expected_args(mocker):
     expected = ScoreResult(match_score=80, summary="Solid budget car.", pros=["Cheap"], cons=["High mileage"], dealbreaker_flags=[])
     mock_client = MagicMock()
-    mock_client.messages.parse.return_value = MagicMock(parsed_output=expected)
+    mock_client.messages.parse.return_value = MagicMock(
+        parsed_output=expected, usage=MagicMock(input_tokens=200, output_tokens=60)
+    )
     mocker.patch("app.scorer.anthropic_scorer.anthropic.Anthropic", return_value=mock_client)
 
-    result = score_listing(_listing(), _criteria_profile(), api_key="fake-anthropic-key")
+    result, usage = score_listing(_listing(), _criteria_profile(), api_key="fake-anthropic-key")
 
     assert result == expected
+    assert usage.input_tokens == 200
+    assert usage.output_tokens == 60
     call_kwargs = mock_client.messages.parse.call_args.kwargs
     assert call_kwargs["model"] == DEFAULT_MODEL
     assert call_kwargs["system"] == "Score this car for a budget beater search."
@@ -40,10 +44,12 @@ def test_score_listing_calls_parse_with_expected_args(mocker):
 def test_score_listing_with_custom_model(mocker):
     expected = ScoreResult(match_score=75, summary="Good deal.", pros=["Reliable"], cons=["Expensive"], dealbreaker_flags=[])
     mock_client = MagicMock()
-    mock_client.messages.parse.return_value = MagicMock(parsed_output=expected)
+    mock_client.messages.parse.return_value = MagicMock(
+        parsed_output=expected, usage=MagicMock(input_tokens=180, output_tokens=55)
+    )
     mocker.patch("app.scorer.anthropic_scorer.anthropic.Anthropic", return_value=mock_client)
 
-    result = score_listing(_listing(), _criteria_profile(), model="claude-opus-4-1", api_key="fake-anthropic-key")
+    result, _usage = score_listing(_listing(), _criteria_profile(), model="claude-opus-4-1", api_key="fake-anthropic-key")
 
     assert result == expected
     call_kwargs = mock_client.messages.parse.call_args.kwargs
@@ -53,3 +59,22 @@ def test_score_listing_with_custom_model(mocker):
 def test_score_listing_raises_when_api_key_missing():
     with pytest.raises(RuntimeError, match="Anthropic API key"):
         score_listing(_listing(), _criteria_profile(), api_key=None)
+
+
+def test_check_connection_lists_models(mocker):
+    mock_client = MagicMock()
+    mock_anthropic = mocker.patch("app.scorer.anthropic_scorer.anthropic.Anthropic", return_value=mock_client)
+
+    check_connection("fake-anthropic-key")
+
+    mock_anthropic.assert_called_once_with(api_key="fake-anthropic-key", timeout=5.0)
+    mock_client.models.list.assert_called_once_with(limit=1)
+
+
+def test_check_connection_raises_on_invalid_key(mocker):
+    mock_client = MagicMock()
+    mock_client.models.list.side_effect = RuntimeError("invalid x-api-key")
+    mocker.patch("app.scorer.anthropic_scorer.anthropic.Anthropic", return_value=mock_client)
+
+    with pytest.raises(RuntimeError, match="invalid x-api-key"):
+        check_connection("bad-key")

@@ -1,0 +1,44 @@
+# Production overrides for the on-prem server.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# No auth/TLS/registry here by design (PROJECT_CONTEXT.md: single-user, LAN-only,
+# no cloud hosting). Keep the host's published ports (3000, 8000, 5432) off any
+# publicly reachable interface — that's the actual access control for this app.
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  db:
+    restart: always
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  backend:
+    restart: always
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+
+  frontend:
+    restart: always
+    logging: *default-logging
+
+  scheduler:
+    restart: always
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M

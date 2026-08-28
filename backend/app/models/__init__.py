@@ -7,6 +7,8 @@ from app.models.notification_log import NotificationLog
 from app.models.scheduler_config import SchedulerConfig
 from app.models.arena_run import ArenaRun
 from app.models.app_settings import AppSettings
+from app.models.log_entry import LogEntry
+from app.models.apify_account import ApifyAccount
 
 __all__ = [
     "SearchFilter",
@@ -18,4 +20,6 @@ __all__ = [
     "SchedulerConfig",
     "ArenaRun",
     "AppSettings",
+    "LogEntry",
+    "ApifyAccount",
 ]

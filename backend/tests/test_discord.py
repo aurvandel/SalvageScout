@@ -7,7 +7,7 @@ from app.notifier.discord import send
 
 
 def _listing():
-    return Listing(fb_listing_id="1", url="https://example.com/1", title="2014 Impala", price_amount=2500.0, raw_apify_data={})
+    return Listing(fb_listing_id="1", url="https://example.com/1", title="2014 Impala", price_amount=2500.0, raw_scraper_data={})
 
 
 def _score():
@@ -42,7 +42,7 @@ def test_send_truncates_over_limit_message():
     route = respx.post("https://discord.com/api/webhooks/x/y").mock(return_value=httpx.Response(204))
 
     listing = Listing(
-        fb_listing_id="1", url="https://example.com/listing/1", title="Long car", price_amount=100.0, raw_apify_data={}
+        fb_listing_id="1", url="https://example.com/listing/1", title="Long car", price_amount=100.0, raw_scraper_data={}
     )
     score = Score(
         match_score=85, summary="x" * 3000, pros=[], cons=[], dealbreaker_flags=[], model_used="claude-haiku-4-5"
