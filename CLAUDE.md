@@ -100,15 +100,17 @@ npm run lint         # Run linter
 
 ## Development Workflow
 
-Leverage the feature branch skill for all changes. A new branch should be created for each chat.
+Use a git worktree for all changes. A new worktree/branch should be created for each chat.
 
 **Standard workflow:**
-1. Create a feature branch at the start
+1. Call `EnterWorktree({name: "<kebab-case-name>"})` at the start — creates `.claude/worktrees/<name>` on branch `worktree-<name>`
 2. Make changes and commit (with clear commit messages)
-3. When ready to publish, use the `publish-pr` skill to create and open a PR
+3. When ready to publish: `git push -u origin <branch>` then `gh pr create --title ... --body ...` by hand
+4. **After the PR merges, remove the worktree** — don't leave it lying around:
+   ```bash
+   git worktree remove .claude/worktrees/<name>
+   git branch -D worktree-<name>
+   ```
+   Or, if still inside the worktree session, `ExitWorktree({action: "remove"})` does both in one step.
 
-```
-/publish-pr
-```
-
-PRs are created on-demand once you're satisfied with the work. The skill handles pushing, PR creation, and returns the PR URL.
+Worktrees pile up fast (dozens have accumulated from past sessions that skipped step 4) — treat cleanup as part of finishing the task, not optional. Periodically sanity-check with `git worktree list` against merged PRs (`gh pr list --state merged`) and remove anything already merged.
